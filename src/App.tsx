@@ -17,6 +17,11 @@ const ytSearch = async (q) => {
 const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 const fmtBig = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n || 0);
 
+/* ─── LOCALSTORAGE PERSISTENCE ────────────────────────────────── */
+const LS_PREFIX = "wave_";
+const lsGet = (key, fallback) => { try { const v = localStorage.getItem(LS_PREFIX + key); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };
+const lsSet = (key, val) => { try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(val)); } catch {} };
+
 /* ─── YT PLAYER BOOTSTRAP ──────────────────────────────────────── */
 let _ytLoaded = false, _ytReady = false;
 const _ytCbs = [];
@@ -555,8 +560,8 @@ export default function App() {
   const [buffering, setBuffering] = useState(false);
   const [queue, setQueue] = useState([]);
   const [qIdx, setQIdx] = useState(0);
-  const [liked, setLiked] = useState([]);
-  const [recent, setRecent] = useState([]);
+  const [liked, setLiked] = useState(() => lsGet("liked", []));
+  const [recent, setRecent] = useState(() => lsGet("recent", []));
   const [charts, setCharts] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [genres, setGenres] = useState([]);
@@ -564,27 +569,27 @@ export default function App() {
   const [selAlb, setSelAlb] = useState(null); const [albTracks, setAlbTracks] = useState([]);
   const [artist, setArtist] = useState(null);
   const [selGenre, setSelGenre] = useState(null); const [genTracks, setGenTracks] = useState([]);
-  const [volume, setVolume] = useState(75);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeat, setRepeat] = useState(false);
+  const [volume, setVolume] = useState(() => lsGet("volume", 75));
+  const [shuffle, setShuffle] = useState(() => lsGet("shuffle", false));
+  const [repeat, setRepeat] = useState(() => lsGet("repeat", false));
   const [loading, setLoading] = useState(false);
   // UI state
-  const [darkMode, setDarkMode] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => lsGet("darkMode", false));
+  const [sidebarOpen, setSidebarOpen] = useState(() => lsGet("sidebarOpen", true));
   const [showQueue, setShowQueue] = useState(false);
   const [toasts, setToasts] = useState([]);
   // Settings
-  const [explicitFilter, setExplicitFilter] = useState(false);
-  const [audioQuality, setAudioQuality] = useState("high");
-  const [crossfade, setCrossfade] = useState(false);
-  const [showLyrics, setShowLyrics] = useState(false);
-  const [autoplay, setAutoplay] = useState(true);
+  const [explicitFilter, setExplicitFilter] = useState(() => lsGet("explicitFilter", false));
+  const [audioQuality, setAudioQuality] = useState(() => lsGet("audioQuality", "high"));
+  const [crossfade, setCrossfade] = useState(() => lsGet("crossfade", false));
+  const [showLyrics, setShowLyrics] = useState(() => lsGet("showLyrics", false));
+  const [autoplay, setAutoplay] = useState(() => lsGet("autoplay", true));
 
   /* ── REFS ── */
   const ytRef = useRef(null);
   const currentRef = useRef(null);
   const qRef = useRef([]), qIdxRef = useRef(0);
-  const shuffleRef = useRef(false), repeatRef = useRef(false), volRef = useRef(75);
+  const shuffleRef = useRef(shuffle), repeatRef = useRef(repeat), volRef = useRef(volume);
 
   useEffect(() => { qRef.current = queue; }, [queue]);
   useEffect(() => { qIdxRef.current = qIdx; }, [qIdx]);
@@ -592,10 +597,36 @@ export default function App() {
   useEffect(() => { repeatRef.current = repeat; }, [repeat]);
   useEffect(() => { volRef.current = volume; }, [volume]);
 
+  /* ── PERSIST TO LOCALSTORAGE ── */
+  useEffect(() => { lsSet("liked", liked); }, [liked]);
+  useEffect(() => { lsSet("recent", recent); }, [recent]);
+  useEffect(() => { lsSet("volume", volume); }, [volume]);
+  useEffect(() => { lsSet("shuffle", shuffle); }, [shuffle]);
+  useEffect(() => { lsSet("repeat", repeat); }, [repeat]);
+  useEffect(() => { lsSet("darkMode", darkMode); }, [darkMode]);
+  useEffect(() => { lsSet("sidebarOpen", sidebarOpen); }, [sidebarOpen]);
+  useEffect(() => { lsSet("explicitFilter", explicitFilter); }, [explicitFilter]);
+  useEffect(() => { lsSet("audioQuality", audioQuality); }, [audioQuality]);
+  useEffect(() => { lsSet("crossfade", crossfade); }, [crossfade]);
+  useEffect(() => { lsSet("showLyrics", showLyrics); }, [showLyrics]);
+  useEffect(() => { lsSet("autoplay", autoplay); }, [autoplay]);
+
   /* ── THEME ── */
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  /* ── KEEP DEEZER METADATA ON OS MEDIA CONTROLS ── */
+  // YouTube's embedded player periodically overwrites navigator.mediaSession.metadata
+  // with its own video info. This effect re-asserts Deezer track metadata every 3s while playing.
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      const t = mediaSessionTrackRef.current;
+      if (t) applyMediaMeta(t);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [playing]);
 
   /* ── BOOT ── */
   useEffect(() => {
@@ -632,9 +663,9 @@ export default function App() {
           const S = window.YT.PlayerState;
           if (e.data === S.PLAYING) {
             setPlaying(true); setBuffering(false);
-            // Re-assert after a short delay — YouTube overwrites mediaSession ~300ms after playback starts
-            const cur = qRef.current[qIdxRef.current];
-            if (cur) setTimeout(() => setMediaSession(cur), 500);
+            // Re-assert Deezer metadata multiple times — YouTube overwrites mediaSession at varying delays after playback starts
+            const cur = mediaSessionTrackRef.current || qRef.current[qIdxRef.current];
+            if (cur) { [300, 600, 1000, 2000].forEach(ms => setTimeout(() => applyMediaMeta(cur), ms)); }
           }
           else if (e.data === S.PAUSED) {
             setPlaying(false);
@@ -652,8 +683,10 @@ export default function App() {
     });
   };
 
-  const setMediaSession = (track) => {
-    if (!("mediaSession" in navigator)) return;
+  const mediaSessionTrackRef = useRef(null);
+
+  const applyMediaMeta = (track) => {
+    if (!("mediaSession" in navigator) || !track) return;
     navigator.mediaSession.metadata = new MediaMetadata({
       title:  track.title       || "Unknown Title",
       artist: track.artist?.name || "Unknown Artist",
@@ -664,6 +697,12 @@ export default function App() {
         { src: track.album?.cover_big    || track.album?.cover_xl || "", sizes: "500x500", type: "image/jpeg" },
       ].filter(a => a.src),
     });
+  };
+
+  const setMediaSession = (track) => {
+    if (!("mediaSession" in navigator)) return;
+    mediaSessionTrackRef.current = track;
+    applyMediaMeta(track);
     navigator.mediaSession.setActionHandler("play",         () => ytRef.current?.playVideo?.());
     navigator.mediaSession.setActionHandler("pause",        () => ytRef.current?.pauseVideo?.());
     navigator.mediaSession.setActionHandler("nexttrack",    () => advance(1));
