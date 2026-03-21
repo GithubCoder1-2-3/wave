@@ -610,6 +610,15 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
   );
 });
 
+/* ─── WAVE BARS (fully isolated — never re-renders from parent prop changes) ── */
+const WaveBars = memo(({ side, barEls, offset }) => (
+  <div className="fs-vinyl-waves">
+    {Array.from({ length: 8 }, (_, i) => (
+      <div key={i} className="fs-vinyl-wave-bar" ref={el => { barEls.current[offset + i] = el; }} />
+    ))}
+  </div>
+), () => true); // always bail — never re-render
+
 /* ─── FS PROGRESS BAR (isolated to prevent re-renders hitting wave RAF) ── */
 const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek }) => {
   const [progress, setProgress] = useState(0);
@@ -742,12 +751,7 @@ const FullscreenView = memo(({
           </button>
 
           <div className="fs-art-wrap">
-            {/* Left waves */}
-            <div className="fs-vinyl-waves">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="fs-vinyl-wave-bar" ref={el => barEls.current[i] = el} />
-              ))}
-            </div>
+            <WaveBars offset={0} barEls={barEls} />
             {coverUrl
               ? <img className={`fs-art${playing ? " playing" : ""}`} src={coverUrl} alt="" />
               : <div className="fs-art-placeholder">
@@ -755,12 +759,7 @@ const FullscreenView = memo(({
                     <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
                   </svg>
                 </div>}
-            {/* Right waves */}
-            <div className="fs-vinyl-waves">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="fs-vinyl-wave-bar" ref={el => barEls.current[8 + i] = el} />
-              ))}
-            </div>
+            <WaveBars offset={8} barEls={barEls} />
           </div>
 
           <div className="fs-meta">
