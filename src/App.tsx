@@ -17,6 +17,39 @@ const ytSearch = async (q) => {
 const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 const fmtBig = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n || 0);
 
+/* ─── SUPABASE CLIENT ───────────────────────────────────────────── */
+const SB_URL = "https://tmrdnlyrpdjhpcslijgf.supabase.co";
+const SB_KEY = "sb_publishable_1encqH4sq_MRn0qu3vfe2A_EnJ6vt6A";
+const sbFetch = async (path, opts = {}) => {
+  const r = await fetch(`${SB_URL}/rest/v1${path}`, {
+    ...opts,
+    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation", ...(opts.headers || {}) },
+  });
+  if (!r.ok) return null;
+  return r.json().catch(() => null);
+};
+
+/* ── YouTube URL Cache ── */
+const ytCacheGet = async (trackId) => {
+  const d = await sbFetch(`/yt_cache?track_id=eq.${trackId}&select=video_id&limit=1`);
+  return d?.[0]?.video_id || null;
+};
+const ytCacheSet = async (trackId, artist, title, videoId) => {
+  await sbFetch("/yt_cache", { method: "POST", body: JSON.stringify({ track_id: trackId, artist, title, video_id: videoId }) });
+};
+
+/* ── Custom Playlists ── */
+const plGet = async () => sbFetch("/user_playlists?select=*,playlist_tracks(count)&order=created_at.desc") || [];
+const plCreate = async (name) => sbFetch("/user_playlists", { method: "POST", body: JSON.stringify({ name }) });
+const plDelete = async (id) => { await sbFetch(`/user_playlists?id=eq.${id}`, { method: "DELETE" }); await sbFetch(`/playlist_tracks?playlist_id=eq.${id}`, { method: "DELETE" }); };
+const plAddTrack = async (playlistId, track) => sbFetch("/playlist_tracks", { method: "POST", body: JSON.stringify({ playlist_id: playlistId, track_id: track.id, track_data: track }) });
+const plRemoveTrack = async (playlistId, trackId) => sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&track_id=eq.${trackId}`, { method: "DELETE" });
+const plGetTracks = async (playlistId) => { const d = await sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&select=track_data&order=created_at.asc`); return (d || []).map(r => r.track_data); };
+
+/* ── Similar Tracks Cache ── */
+const similarGet = async (trackId) => { const d = await sbFetch(`/similar_cache?track_id=eq.${trackId}&select=tracks&limit=1`); return d?.[0]?.tracks || null; };
+const similarSet = async (trackId, tracks) => sbFetch("/similar_cache", { method: "POST", body: JSON.stringify({ track_id: trackId, tracks }) });
+
 /* ─── LOCALSTORAGE PERSISTENCE ────────────────────────────────── */
 const LS_PREFIX = "wave_";
 const lsGet = (key, fallback) => { try { const v = localStorage.getItem(LS_PREFIX + key); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };
@@ -571,6 +604,35 @@ button, input, select { transition: var(--trans); }
 /* ── ACCENT TINT ── */
 .accent-tint { transition: --accent-tint .6s; }
 
+/* ── CUSTOM PLAYLISTS ── */
+.pl-create-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: var(--line); border-radius: var(--r2); padding: 5px 12px; font-size: 12px; font-family: 'Geist Mono', monospace; color: var(--tx2); cursor: pointer; transition: all .1s; }
+.pl-create-btn:hover { background: var(--bg3); color: var(--tx); border-color: var(--border2); }
+.pl-modal-backdrop { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
+.pl-modal { background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); padding: 20px; width: min(360px, 92vw); box-shadow: var(--shadow-lg); }
+.pl-modal-title { font-size: 14px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 12px; }
+.pl-modal-input { width: 100%; padding: 7px 10px; background: var(--bg3); border: var(--line); border-radius: var(--r2); font-size: 13px; font-family: 'Geist', sans-serif; color: var(--tx); outline: none; margin-bottom: 12px; }
+.pl-modal-input:focus { border-color: var(--border2); }
+.pl-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.pl-modal-btn { padding: 6px 14px; border-radius: var(--r2); font-size: 12px; font-family: 'Geist', sans-serif; cursor: pointer; border: var(--line); background: none; color: var(--tx2); }
+.pl-modal-btn.primary { background: var(--tx); color: var(--bg); border-color: var(--tx); }
+.pl-modal-btn:hover { background: var(--bg3); }
+.pl-modal-btn.primary:hover { opacity: .85; }
+.pl-card { padding: 14px; cursor: pointer; position: relative; }
+.pl-card:hover { background: var(--bg2); }
+.pl-card-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-card-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; margin-top: 2px; }
+.pl-card-icon { width: 100%; aspect-ratio: 1; background: var(--bg3); border: var(--line); border-radius: var(--r2); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--tx3); }
+.pl-card-delete { position: absolute; top: 8px; right: 8px; background: none; border: var(--line); border-radius: var(--r2); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--tx3); opacity: 0; transition: opacity .1s; }
+.pl-card:hover .pl-card-delete { opacity: 1; }
+.pl-card-delete:hover { color: var(--red); border-color: var(--red); background: rgba(229,72,77,.06); }
+.add-to-pl-menu { position: fixed; z-index: 200; background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); box-shadow: var(--shadow-lg); min-width: 180px; overflow: hidden; animation: cmdIn .12s ease; }
+.add-to-pl-item { padding: 8px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.add-to-pl-item:hover { background: var(--bg3); }
+
+/* ── SIMILAR TRACKS ── */
+.similar-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--tx3); cursor: pointer; background: none; border: var(--line); padding: 4px 10px; border-radius: var(--r2); font-family: 'Geist Mono', monospace; transition: all .1s; }
+.similar-btn:hover { color: var(--tx); background: var(--bg3); border-color: var(--border2); }
+
 /* ── MOBILE ── */
 @media (max-width: 680px) {
   .shell { grid-template-columns: 1fr; grid-template-rows: 1fr 64px 52px; }
@@ -628,7 +690,7 @@ button, input, select { transition: var(--trans); }
 `;
 
 /* ─── HASH ROUTER ───────────────────────────────────────────────── */
-const SIMPLE_VIEWS = ["home", "browse", "liked", "settings", "stats", "lyrics"];
+const SIMPLE_VIEWS = ["home", "browse", "liked", "settings", "stats", "lyrics", "search", "playlist", "album", "artist", "genre", "library", "similar", "custom_playlist"];
 function getHashView() {
   const h = window.location.hash.slice(1) || "home";
   return SIMPLE_VIEWS.includes(h) ? h : "home";
@@ -1456,6 +1518,15 @@ export default function App() {
   const [sleepMins, setSleepMins] = useState(null);
   const [accentColor, setAccentColor] = useState(null);
   const sleepRef = useRef(null);
+  // Playlists & similar
+  const [playlists, setPlaylists] = useState([]);
+  const [selCustomPl, setSelCustomPl] = useState(null);
+  const [customPlTracks, setCustomPlTracks] = useState([]);
+  const [showCreatePl, setShowCreatePl] = useState(false);
+  const [newPlName, setNewPlName] = useState("");
+  const [addToPlMenu, setAddToPlMenu] = useState(null); // {track, x, y}
+  const [similar, setSimilar] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   const ytRef = useRef(null);
   const qRef = useRef([]), qIdxRef = useRef(0);
@@ -1619,8 +1690,13 @@ export default function App() {
     if (list.length) { setQueue(list); setQIdx(idx); qRef.current = list; qIdxRef.current = idx; }
     setRecent(r => [track, ...r.filter(t => t.id !== track.id)].slice(0, 12));
     setMediaSession(track);
-    const searchQ = audioQuality === "high" ? `${track.title} ${track.artist?.name} official audio` : `${track.title} ${track.artist?.name} audio`;
-    const vid = await ytSearch(searchQ);
+    // Check YouTube cache first
+    let vid = await ytCacheGet(track.id);
+    if (!vid) {
+      const searchQ = audioQuality === "high" ? `${track.title} ${track.artist?.name} official audio` : `${track.title} ${track.artist?.name} audio`;
+      vid = await ytSearch(searchQ);
+      if (vid) ytCacheSet(track.id, track.artist?.name || "", track.title || "", vid);
+    }
     if (!vid) { setBuffering(false); toast("⚠ No audio found for this track"); return; }
     if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(vid); ytRef.current.setVolume(volRef.current); }
     else setTimeout(() => { ytRef.current?.loadVideoById?.(vid); ytRef.current?.setVolume?.(volRef.current); }, 900);
@@ -1685,6 +1761,53 @@ export default function App() {
     else { setSleepMins(next); toast(`💤 Sleep in ${next} min`); }
   }, [sleepMins]);
 
+  // Load playlists from Supabase
+  const loadPlaylists = useCallback(async () => {
+    const d = await plGet();
+    setPlaylists(Array.isArray(d) ? d : []);
+  }, []);
+  useEffect(() => { loadPlaylists(); }, []);
+
+  const createPlaylist = async () => {
+    if (!newPlName.trim()) return;
+    await plCreate(newPlName.trim());
+    setNewPlName(""); setShowCreatePl(false);
+    loadPlaylists(); toast("✓ Playlist created");
+  };
+  const deletePlaylist = async (id) => {
+    await plDelete(id); loadPlaylists(); toast("Playlist deleted");
+    if (selCustomPl?.id === id) { setSelCustomPl(null); setCustomPlTracks([]); setView("library"); }
+  };
+  const addToPlaylist = async (playlistId, track) => {
+    await plAddTrack(playlistId, track); toast("✓ Added to playlist");
+    if (selCustomPl?.id === playlistId) openCustomPlaylist(selCustomPl);
+  };
+  const removeFromPlaylist = async (track) => {
+    await plRemoveTrack(selCustomPl.id, track.id); openCustomPlaylist(selCustomPl); toast("Removed from playlist");
+  };
+  const openCustomPlaylist = async (pl) => {
+    setSelCustomPl(pl); setView("custom_playlist"); setLoading(true);
+    const tracks = await plGetTracks(pl.id);
+    setCustomPlTracks(tracks); setLoading(false);
+  };
+
+  // Similar tracks
+  const getSimilar = async (track) => {
+    if (!track) return;
+    setSimilarLoading(true); setSimilar([]);
+    setView("similar");
+    // Check cache first
+    const cached = await similarGet(track.id);
+    if (cached) { setSimilar(cached); setSimilarLoading(false); return; }
+    try {
+      const d = await dz(`/track/${track.id}/related?limit=20`);
+      const tracks = d.data || [];
+      setSimilar(tracks);
+      if (tracks.length) similarSet(track.id, tracks);
+    } catch {}
+    setSimilarLoading(false);
+  };
+
   const relatedTracks = (results?.tracks || charts).filter(t => t.id !== current?.id).slice(0, 30);
 
   return (
@@ -1719,6 +1842,37 @@ export default function App() {
       )}
 
       {/* LYRICS */}
+      {/* CREATE PLAYLIST MODAL */}
+      {showCreatePl && (
+        <div className="pl-modal-backdrop" onClick={() => setShowCreatePl(false)}>
+          <div className="pl-modal" onClick={e => e.stopPropagation()}>
+            <div className="pl-modal-title">New Playlist</div>
+            <input className="pl-modal-input" placeholder="Playlist name…" value={newPlName} onChange={e => setNewPlName(e.target.value)} onKeyDown={e => e.key === "Enter" && createPlaylist()} autoFocus />
+            <div className="pl-modal-btns">
+              <button className="pl-modal-btn" onClick={() => { setShowCreatePl(false); setNewPlName(""); }}>Cancel</button>
+              <button className="pl-modal-btn primary" onClick={createPlaylist}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD TO PLAYLIST CONTEXT MENU */}
+      {addToPlMenu && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setAddToPlMenu(null)} />
+          <div className="add-to-pl-menu" style={{ top: addToPlMenu.y, left: addToPlMenu.x, zIndex: 200 }}>
+            {playlists.length === 0
+              ? <div className="add-to-pl-item" style={{ color: "var(--tx3)", cursor: "default" }}>No playlists — create one first</div>
+              : playlists.map(pl => (
+                <div key={pl.id} className="add-to-pl-item" onClick={() => { addToPlaylist(pl.id, addToPlMenu.track); setAddToPlMenu(null); }}>
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                  {pl.name}
+                </div>
+              ))}
+          </div>
+        </>
+      )}
+
       {/* FULLSCREEN */}
       {fullscreenOpen && (
         <FullscreenView
@@ -1791,6 +1945,7 @@ export default function App() {
                   { v: "home", label: "Overview", ico: <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg> },
                   { v: "browse", label: "Browse", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg> },
                   { v: "liked", label: "Saved", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg> },
+                  { v: "library", label: "Library", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg> },
                   { v: "stats", label: "Stats", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" /></svg> },
                   { v: "lyrics", label: "Lyrics", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg> },
                   { v: "settings", label: "Settings", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> },
@@ -1936,6 +2091,70 @@ export default function App() {
           {!loading && view === "stats" && <StatsPage recent={recent} liked={liked} />}
 
           {view === "lyrics" && <LyricsPage current={current} ytRef={ytRef} />}
+
+          {/* LIBRARY — custom playlists */}
+          {view === "library" && (
+            <div>
+              <div className="ph" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div><div className="pt">Library</div><div className="ps">{playlists.length} playlists</div></div>
+                <button className="pl-create-btn" onClick={() => setShowCreatePl(true)}>
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                  New playlist
+                </button>
+              </div>
+              {playlists.length === 0
+                ? <div className="empty"><div className="empty-title">No playlists yet</div><div className="empty-sub">Create one to organise your music</div></div>
+                : <div className="cgrid">
+                    {playlists.map(pl => (
+                      <div key={pl.id} className="pl-card gc" onClick={() => openCustomPlaylist(pl)}>
+                        <div className="pl-card-icon gc-img" style={{ aspectRatio: 1 }}>
+                          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                        </div>
+                        <div className="pl-card-title">{pl.name}</div>
+                        <div className="pl-card-sub">{pl.playlist_tracks?.[0]?.count ?? 0} tracks</div>
+                        <button className="pl-card-delete" onClick={e => { e.stopPropagation(); deletePlaylist(pl.id); }}>
+                          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>}
+            </div>
+          )}
+
+          {/* CUSTOM PLAYLIST detail */}
+          {!loading && view === "custom_playlist" && selCustomPl && (
+            <div>
+              <div className="ehero">
+                <div className="ehero-img-cell" style={{ background: "var(--bg3)" }}>
+                  <svg width="48" height="48" fill="none" stroke="var(--tx3)" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                </div>
+                <div className="ehero-info">
+                  <div className="entity-type">Playlist</div>
+                  <div className="entity-name">{selCustomPl.name}</div>
+                  <div className="entity-meta"><span className="emeta-item"><span className="lbl">tracks</span>{customPlTracks.length}</span></div>
+                  <button className="play-hero-btn" onClick={() => customPlTracks.length && doPlay(customPlTracks[0], customPlTracks, 0)}>
+                    <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Play All
+                  </button>
+                </div>
+              </div>
+              <div style={{ padding: "8px 18px" }}><button className="back-btn" onClick={() => setView("library")}>← library</button></div>
+              <TTable tracks={customPlTracks} showAlbum {...tp} />
+            </div>
+          )}
+
+          {/* SIMILAR TRACKS */}
+          {view === "similar" && (
+            <div>
+              <div className="ph" style={{ display: "flex", alignItems: "flex-start", gap: 8, flexDirection: "column" }}>
+                <button className="back-btn" onClick={() => window.history.back()}>← back</button>
+                <div className="pt">Similar to {current?.title}</div>
+                <div className="ps">{current?.artist?.name} · tracks you might like</div>
+              </div>
+              {similarLoading && <div className="ld"><svg className="spin" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-6.219-8.56" /></svg>finding similar tracks…</div>}
+              {!similarLoading && similar.length === 0 && <div className="empty"><div className="empty-title">No similar tracks found</div><div className="empty-sub">Try a more popular track</div></div>}
+              {!similarLoading && similar.length > 0 && <TTable tracks={similar} {...tp} />}
+            </div>
+          )}
 
           {!loading && view === "browse" && (
             <div>
