@@ -388,18 +388,20 @@ button, input, select { transition: var(--trans); }
 .fs-action-btn.active { color: #fafafa; border-color: rgba(255,255,255,.4); }
 .fs-action-btn.liked { color: #e5484d; border-color: #e5484d; }
 
-.fs-art-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 14px; }
+.fs-art-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
 .fs-vinyl-waves {
-  width: 28px;
+  flex: 1;
   height: clamp(200px, 26vw, 320px);
   pointer-events: none;
-  display: flex; align-items: flex-end; justify-content: center; gap: 2px;
-  flex-shrink: 0;
+  display: flex; align-items: flex-end; justify-content: space-evenly;
+  flex-shrink: 1;
+  min-width: 0;
 }
 .fs-vinyl-wave-bar {
-  width: 3px;
-  border-radius: 2px;
+  width: 6px;
+  border-radius: 3px;
   background: rgba(255,255,255,.22);
+  flex-shrink: 0;
   will-change: height, opacity;
 }
 .fs-art, .fs-art-placeholder { position: relative; z-index: 1; flex-shrink: 0; }
@@ -708,7 +710,7 @@ const FullscreenView = memo(({
           <div className="fs-art-wrap">
             {/* Left waves */}
             <div className="fs-vinyl-waves">
-              {beatHeights.slice(0, 8).map((h, i) => (
+              {beatHeights.slice(0, 12).map((h, i) => (
                 <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
               ))}
             </div>
@@ -721,7 +723,7 @@ const FullscreenView = memo(({
                 </div>}
             {/* Right waves */}
             <div className="fs-vinyl-waves">
-              {beatHeights.slice(8, 16).map((h, i) => (
+              {beatHeights.slice(12, 24).map((h, i) => (
                 <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
               ))}
             </div>
