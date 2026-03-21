@@ -388,24 +388,21 @@ button, input, select { transition: var(--trans); }
 .fs-action-btn.active { color: #fafafa; border-color: rgba(255,255,255,.4); }
 .fs-action-btn.liked { color: #e5484d; border-color: #e5484d; }
 
-.fs-art-wrap { position: relative; flex-shrink: 0; }
+.fs-art-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 14px; }
 .fs-vinyl-waves {
-  position: absolute;
-  inset: -32px;
+  width: 28px;
+  height: clamp(200px, 26vw, 320px);
   pointer-events: none;
-  z-index: 0;
   display: flex; align-items: flex-end; justify-content: center; gap: 2px;
-  overflow: hidden;
-  border-radius: 10px;
+  flex-shrink: 0;
 }
 .fs-vinyl-wave-bar {
   width: 3px;
   border-radius: 2px;
-  background: rgba(255,255,255,.18);
-  transform-origin: bottom center;
+  background: rgba(255,255,255,.22);
   will-change: height, opacity;
 }
-.fs-art, .fs-art-placeholder { position: relative; z-index: 1; }
+.fs-art, .fs-art-placeholder { position: relative; z-index: 1; flex-shrink: 0; }
 
 .fs-right { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
@@ -709,14 +706,10 @@ const FullscreenView = memo(({
           </button>
 
           <div className="fs-art-wrap">
-            {/* Ambient beat waves behind the art */}
+            {/* Left waves */}
             <div className="fs-vinyl-waves">
-              {beatHeights.map((h, i) => (
-                <div
-                  key={i}
-                  className="fs-vinyl-wave-bar"
-                  style={{ height: `${Math.round(h * 100)}%`, opacity: 0.1 + h * 0.3 }}
-                />
+              {beatHeights.slice(0, 8).map((h, i) => (
+                <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
               ))}
             </div>
             {coverUrl
@@ -726,6 +719,12 @@ const FullscreenView = memo(({
                     <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
                   </svg>
                 </div>}
+            {/* Right waves */}
+            <div className="fs-vinyl-waves">
+              {beatHeights.slice(8, 16).map((h, i) => (
+                <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
+              ))}
+            </div>
           </div>
 
           <div className="fs-meta">
