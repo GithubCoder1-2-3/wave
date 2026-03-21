@@ -637,7 +637,8 @@ const FullscreenView = memo(({
       Math.max(0.1, Math.min(0.9, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
     );
     barEls.current.forEach((el, i) => {
-      if (el) { el.style.transform = `scaleY(${baseHeights.current[i].toFixed(3)})`; el.style.opacity = (0.08 + baseHeights.current[i] * 0.35).toFixed(3); }
+      const barI = i < 8 ? i : 15 - i;
+      if (el) { el.style.transform = `scaleY(${baseHeights.current[barI].toFixed(3)})`; el.style.opacity = (0.08 + baseHeights.current[barI] * 0.35).toFixed(3); }
     });
   }, [current?.id]);
 
@@ -651,7 +652,7 @@ const FullscreenView = memo(({
       barEls.current.forEach((el, i) => {
         if (!el) return;
         const barI = i < 8 ? i : 15 - i;
-        const h = baseHeights.current[i] ?? 0.3;
+        const h = baseHeights.current[barI] ?? 0.3;
         const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + barI * 0.42)) * 0.4 + Math.sin(t * 7 + barI * 1.1) * 0.07));
         el.style.transform = `scaleY(${v.toFixed(3)})`;
         el.style.opacity = (0.08 + v * 0.35).toFixed(3);
