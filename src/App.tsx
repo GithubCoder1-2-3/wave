@@ -703,15 +703,9 @@ function useHashView() {
   useEffect(() => {
     const onPop = () => setViewState(getHashView());
     window.addEventListener("popstate", onPop);
-    // Also handle hash changes from direct URL edits
     window.addEventListener("hashchange", onPop);
     return () => { window.removeEventListener("popstate", onPop); window.removeEventListener("hashchange", onPop); };
   }, []);
-  // Keep state in sync when hash changes externally
-  useEffect(() => {
-    const v = getHashView();
-    if (v !== view) setViewState(v);
-  });
   return [view, setView];
 }
 
@@ -999,7 +993,7 @@ const CardGrid = ({ items, onClick, imgFn, titleFn, subFn, round = false }) => (
 );
 
 /* ─── TRACK ROW ─────────────────────────────────────────────────── */
-const TRow = memo(({ track, index, list, showAlbum, currentId, playing, buffering, liked, onPlay, onLike }) => {
+const TRow = memo(({ track, index, list, showAlbum, currentId, playing, buffering, liked, onPlay, onLike, onAddToPlaylist, onSimilar }) => {
   const active = currentId === track.id;
   const isLiked = liked.some(t => t.id === track.id);
   const isExplicit = track.explicit_lyrics === true || track.explicit_lyrics === 1 || track.explicit_content_lyrics === 1;
@@ -1026,7 +1020,17 @@ const TRow = memo(({ track, index, list, showAlbum, currentId, playing, bufferin
       </td>
       {showAlbum ? <td className="td-album">{track.album?.title}</td> : null}
       <td className="td-dur">{fmt(track.duration)}</td>
-      <td style={{ textAlign: "right" }}>
+      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+        {onSimilar && (
+          <button className="like-btn" title="Similar tracks" onClick={e => { e.stopPropagation(); onSimilar(track); }} style={{ marginRight: 2 }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9" /></svg>
+          </button>
+        )}
+        {onAddToPlaylist && (
+          <button className="like-btn" title="Add to playlist" onClick={e => { e.stopPropagation(); onAddToPlaylist(track, e); }} style={{ marginRight: 2 }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+          </button>
+        )}
         <button className={`like-btn${isLiked ? " liked" : ""}`} onClick={e => { e.stopPropagation(); onLike(track); }}>
           <svg width="13" height="13" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -1038,7 +1042,7 @@ const TRow = memo(({ track, index, list, showAlbum, currentId, playing, bufferin
 });
 
 /* ─── TRACK TABLE ───────────────────────────────────────────────── */
-const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, playing, buffering, liked, onPlay, onLike }) => {
+const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, playing, buffering, liked, onPlay, onLike, onAddToPlaylist, onSimilar }) => {
   const filtered = explicitFilter
     ? tracks.filter(t => t.explicit_lyrics !== 1 && t.explicit_lyrics !== true && t.explicit_content_lyrics !== 1)
     : tracks;
@@ -1066,6 +1070,7 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
             track={t} index={i} list={filtered} showAlbum={showAlbum}
             currentId={currentId} playing={playing} buffering={buffering}
             liked={liked} onPlay={onPlay} onLike={onLike}
+            onAddToPlaylist={onAddToPlaylist} onSimilar={onSimilar}
           />
         ))}
       </tbody>
@@ -1751,8 +1756,6 @@ export default function App() {
   const openArtist = async a => { setView("artist"); setLoading(true); const [i, t, alb] = await Promise.all([dz(`/artist/${a.id}`), dz(`/artist/${a.id}/top?limit=10`), dz(`/artist/${a.id}/albums?limit=10`)]); setArtist({ info: i, top: t.data || [], albums: alb.data || [] }); setLoading(false); };
   const openGenre = async g => { setSelGenre(g); setView("genre"); setLoading(true); const d = await dz(`/chart/${g.id}/tracks?limit=20`); setGenTracks(d.data || []); setLoading(false); };
 
-  const tp = { explicitFilter, currentId: current?.id, playing, buffering, liked, onPlay: doPlay, onLike: toggleLike };
-
   // Related tracks = current queue or search results or charts
   const handleSleep = useCallback(() => {
     const opts = [15, 30, 45, 60];
@@ -1809,6 +1812,16 @@ export default function App() {
   };
 
   const relatedTracks = (results?.tracks || charts).filter(t => t.id !== current?.id).slice(0, 30);
+
+  const tp = {
+    explicitFilter, currentId: current?.id, playing, buffering, liked,
+    onPlay: doPlay, onLike: toggleLike,
+    onSimilar: getSimilar,
+    onAddToPlaylist: (track, e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setAddToPlMenu({ track, x: rect.left, y: rect.bottom + 4 });
+    },
+  };
 
   return (
     <>
@@ -2230,9 +2243,14 @@ export default function App() {
                     <span className="emeta-item"><span className="lbl">fans</span>{fmtBig(artist.info?.nb_fan)}</span>
                     <span className="emeta-item"><span className="lbl">albums</span>{artist.albums?.length}</span>
                   </div>
-                  <button className="play-hero-btn" onClick={() => artist.top.length && doPlay(artist.top[0], artist.top, 0)}>
-                    <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Play Top Tracks
-                  </button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                    <button className="play-hero-btn" onClick={() => artist.top.length && doPlay(artist.top[0], artist.top, 0)}>
+                      <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Play Top Tracks
+                    </button>
+                    <button className="similar-btn" onClick={() => artist.top[0] && getSimilar(artist.top[0])}>
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9" /></svg> Similar
+                    </button>
+                  </div>
                 </div>
               </div>
               <div style={{ padding: "8px 18px" }}><button className="back-btn" onClick={() => setView("search")}>← back</button></div>
