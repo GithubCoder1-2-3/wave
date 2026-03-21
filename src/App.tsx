@@ -647,6 +647,7 @@ const FullscreenView = memo(({
     if (!playing) return;
     let start = null;
     const tick = (ts) => {
+      if (!beatRef.current) return;
       if (!start) start = ts;
       const t = (ts - start) / 400;
       barEls.current.forEach((el, i) => {
@@ -660,8 +661,11 @@ const FullscreenView = memo(({
       beatRef.current = requestAnimationFrame(tick);
     };
     beatRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(beatRef.current);
+    return () => { cancelAnimationFrame(beatRef.current); beatRef.current = null; };
   }, [playing]);
+
+  // Always cancel RAF on unmount
+  useEffect(() => () => { cancelAnimationFrame(beatRef.current); beatRef.current = null; }, []);
 
   useEffect(() => {
     clearInterval(timerRef.current);
