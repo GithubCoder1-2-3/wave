@@ -622,14 +622,9 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
 
 /* ─── WAVE BARS (fully isolated — never re-renders from parent prop changes) ── */
 const WaveBars = memo(({ playing }) => (
-  <>
-    <div className={`fs-vinyl-waves${playing ? " playing" : ""}`}>
-      {Array.from({ length: 8 }, (_, i) => <div key={i} className="fs-vinyl-wave-bar" />)}
-    </div>
-    <div className={`fs-vinyl-waves${playing ? " playing" : ""}`}>
-      {Array.from({ length: 8 }, (_, i) => <div key={i} className="fs-vinyl-wave-bar" />)}
-    </div>
-  </>
+  <div className={`fs-vinyl-waves${playing ? " playing" : ""}`}>
+    {Array.from({ length: 8 }, (_, i) => <div key={i} className="fs-vinyl-wave-bar" />)}
+  </div>
 ));
 
 /* ─── FS PROGRESS BAR (isolated to prevent re-renders hitting wave RAF) ── */
@@ -674,6 +669,14 @@ const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek
     </div>
   );
 });
+
+const FsSidebarToggle = memo(({ open, onClick }) => (
+  <button className={`fs-sidebar-toggle${open ? " open" : ""}`} onClick={onClick} title="Toggle queue sidebar">
+    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  </button>
+));
 
 /* ─── FULLSCREEN VIEW ───────────────────────────────────────────── */
 const FullscreenView = memo(({
@@ -730,6 +733,7 @@ const FullscreenView = memo(({
                     <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
                   </svg>
                 </div>}
+            <WaveBars playing={playing} />
           </div>
 
           <div className="fs-meta">
