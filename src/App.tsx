@@ -22,13 +22,39 @@ const fmtBig = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n /
 /* ─── SUPABASE CLIENT ───────────────────────────────────────────── */
 const SB_URL = "https://tmrdnlyrpdjhpcslijgf.supabase.co";
 const SB_KEY = "sb_publishable_1encqH4sq_MRn0qu3vfe2A_EnJ6vt6A";
+
+/* Auth token stored in localStorage */
+const getToken = () => { try { return localStorage.getItem("wave_sb_token") || null; } catch { return null; } };
+const setToken = (t) => { try { if (t) localStorage.setItem("wave_sb_token", t); else localStorage.removeItem("wave_sb_token"); } catch {} };
+const getUserId = () => { try { const t = getToken(); if (!t) return null; return JSON.parse(atob(t.split(".")[1]))?.sub || null; } catch { return null; } };
+
 const sbFetch = async (path, opts = {}) => {
+  const token = getToken() || SB_KEY;
   const r = await fetch(`${SB_URL}/rest/v1${path}`, {
     ...opts,
-    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation", ...(opts.headers || {}) },
+    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "Prefer": "return=representation", ...(opts.headers || {}) },
   });
   if (!r.ok) return null;
   return r.json().catch(() => null);
+};
+
+/* Auth API */
+const sbSignUp = async (email, password) => {
+  const r = await fetch(`${SB_URL}/auth/v1/signup`, { method: "POST", headers: { "apikey": SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+  return r.json();
+};
+const sbSignIn = async (email, password) => {
+  const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: { "apikey": SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+  return r.json();
+};
+const sbMagicLink = async (email) => {
+  const r = await fetch(`${SB_URL}/auth/v1/magiclink`, { method: "POST", headers: { "apikey": SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+  return r.json();
+};
+const sbSignOut = async () => {
+  const token = getToken();
+  if (token) await fetch(`${SB_URL}/auth/v1/logout`, { method: "POST", headers: { "apikey": SB_KEY, "Authorization": `Bearer ${token}` } });
+  setToken(null);
 };
 
 /* ── YouTube URL Cache ── */
@@ -41,8 +67,21 @@ const ytCacheSet = async (trackId, artist, title, videoId) => {
 };
 
 /* ── Custom Playlists ── */
-const plGet = async () => sbFetch("/user_playlists?select=*,playlist_tracks(count)&order=created_at.desc") || [];
-const plCreate = async (name) => sbFetch("/user_playlists", { method: "POST", body: JSON.stringify({ name }) });
+const plGet = async () => {
+  const uid = getUserId();
+  // Own playlists + public playlists from others
+  if (uid) {
+    const own = await sbFetch(`/user_playlists?select=*,playlist_tracks(count)&order=created_at.desc`) || [];
+    return Array.isArray(own) ? own : [];
+  }
+  // Not logged in — only public
+  const pub = await sbFetch(`/user_playlists?select=*,playlist_tracks(count)&is_public=eq.true&order=created_at.desc`) || [];
+  return Array.isArray(pub) ? pub : [];
+};
+const plCreate = async (name, isPublic = false) => {
+  const uid = getUserId();
+  return sbFetch("/user_playlists", { method: "POST", body: JSON.stringify({ name, is_public: isPublic, user_id: uid }) });
+};
 const plDelete = async (id) => { await sbFetch(`/user_playlists?id=eq.${id}`, { method: "DELETE" }); await sbFetch(`/playlist_tracks?playlist_id=eq.${id}`, { method: "DELETE" }); };
 const plAddTrack = async (playlistId, track) => sbFetch("/playlist_tracks", { method: "POST", body: JSON.stringify({ playlist_id: playlistId, track_id: track.id, track_data: track }) });
 const plRemoveTrack = async (playlistId, trackId) => sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&track_id=eq.${trackId}`, { method: "DELETE" });
@@ -635,6 +674,32 @@ button, input, select { transition: var(--trans); }
 .similar-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--tx3); cursor: pointer; background: none; border: var(--line); padding: 4px 10px; border-radius: var(--r2); font-family: 'Geist Mono', monospace; transition: all .1s; }
 .similar-btn:hover { color: var(--tx); background: var(--bg3); border-color: var(--border2); }
 
+/* ── AUTH ── */
+.auth-modal-backdrop { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; animation: fadeIn .15s ease; }
+.auth-modal { background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); width: min(400px, 94vw); box-shadow: var(--shadow-lg); overflow: hidden; }
+.auth-modal-header { padding: 20px 20px 0; display: flex; align-items: center; gap: 10px; }
+.auth-modal-logo { display: flex; align-items: center; gap: 7px; }
+.auth-modal-title { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+.auth-tabs { display: flex; border-bottom: var(--line); margin-top: 16px; padding: 0 20px; }
+.auth-tab { font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tx3); padding: 10px 10px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .1s; }
+.auth-tab.active { color: var(--tx); border-bottom-color: var(--tx); }
+.auth-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.auth-input { width: 100%; padding: 8px 11px; background: var(--bg3); border: var(--line); border-radius: var(--r2); font-size: 13px; font-family: 'Geist', sans-serif; color: var(--tx); outline: none; }
+.auth-input:focus { border-color: var(--border2); box-shadow: 0 0 0 3px rgba(0,112,243,.1); }
+.auth-btn { width: 100%; padding: 9px; background: var(--tx); color: var(--bg); border: none; border-radius: var(--r2); font-size: 13px; font-weight: 600; font-family: 'Geist', sans-serif; cursor: pointer; transition: opacity .1s; }
+.auth-btn:hover { opacity: .85; }
+.auth-btn.secondary { background: none; color: var(--tx2); border: var(--line); }
+.auth-btn.secondary:hover { background: var(--bg3); opacity: 1; }
+.auth-error { font-size: 11px; color: var(--red); font-family: 'Geist Mono', monospace; }
+.auth-success { font-size: 11px; color: var(--green); font-family: 'Geist Mono', monospace; }
+.auth-divider { display: flex; align-items: center; gap: 10px; color: var(--tx3); font-size: 11px; font-family: 'Geist Mono', monospace; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-footer { padding: 0 20px 16px; text-align: center; font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
+/* User chip in topbar */
+.user-chip { display: flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border: var(--line); border-radius: 20px; cursor: pointer; transition: all .1s; background: none; font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx2); }
+.user-chip:hover { background: var(--bg3); color: var(--tx); }
+.user-avatar { width: 20px; height: 20px; border-radius: 50%; background: var(--tx); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+
 /* ── MOBILE ── */
 @media (max-width: 680px) {
   .shell { grid-template-columns: 1fr; grid-template-rows: 1fr 64px 52px; }
@@ -710,6 +775,75 @@ function useHashView() {
   }, []);
   return [view, setView];
 }
+
+/* ─── AUTH MODAL ────────────────────────────────────────────────── */
+const AuthModal = memo(({ onClose, onLogin }) => {
+  const [tab, setTab] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handle = async () => {
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      if (tab === "magic") {
+        const d = await sbMagicLink(email);
+        if (d.error) setError(d.error.message || d.msg || "Error");
+        else setSuccess("Magic link sent — check your email!");
+      } else if (tab === "signup") {
+        const d = await sbSignUp(email, password);
+        if (d.error) setError(d.error.message || d.msg || "Error");
+        else { setSuccess("Account created — check email to confirm, then sign in."); }
+      } else {
+        const d = await sbSignIn(email, password);
+        if (d.error) setError(d.error.message || d.msg || "Invalid credentials");
+        else { setToken(d.access_token); onLogin(d); onClose(); }
+      }
+    } catch { setError("Network error"); }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && !loading) handle(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [email, password, tab, loading]);
+
+  return (
+    <div className="auth-modal-backdrop" onClick={onClose}>
+      <div className="auth-modal" onClick={e => e.stopPropagation()}>
+        <div className="auth-modal-header">
+          <div className="auth-modal-logo">
+            <WaveLogo size={16} />
+            <span className="auth-modal-title">WAVE</span>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace", marginLeft: 4 }}>accounts</span>
+        </div>
+        <div className="auth-tabs">
+          {[["signin", "Sign in"], ["signup", "Sign up"], ["magic", "Magic link"]].map(([id, label]) => (
+            <div key={id} className={`auth-tab${tab === id ? " active" : ""}`} onClick={() => { setTab(id); setError(""); setSuccess(""); }}>{label}</div>
+          ))}
+        </div>
+        <div className="auth-body">
+          <input className="auth-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} autoFocus />
+          {tab !== "magic" && (
+            <input className="auth-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+          )}
+          {error && <div className="auth-error">{error}</div>}
+          {success && <div className="auth-success">{success}</div>}
+          <button className="auth-btn" onClick={handle} disabled={loading}>
+            {loading ? "…" : tab === "signin" ? "Sign in" : tab === "signup" ? "Create account" : "Send magic link"}
+          </button>
+        </div>
+        <div className="auth-footer">
+          {tab === "signin" ? "No account? Click Sign up above." : tab === "signup" ? "Already have one? Click Sign in." : "We'll email you a one-click login link."}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 /* ─── COMMAND PALETTE ───────────────────────────────────────────── */
 const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, onPlay, onNav, onAction }) => {
@@ -1533,9 +1667,14 @@ export default function App() {
   const [customPlTracks, setCustomPlTracks] = useState([]);
   const [showCreatePl, setShowCreatePl] = useState(false);
   const [newPlName, setNewPlName] = useState("");
-  const [addToPlMenu, setAddToPlMenu] = useState(null); // {track, x, y}
+  const [newPlPublic, setNewPlPublic] = useState(false);
+  const [plSearch, setPlSearch] = useState("");
+  const [addToPlMenu, setAddToPlMenu] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+  // Auth
+  const [user, setUser] = useState(() => { const uid = getUserId(); return uid ? { id: uid } : null; });
+  const [authOpen, setAuthOpen] = useState(false);
 
   const ytRef = useRef(null);
   const qRef = useRef([]), qIdxRef = useRef(0);
@@ -1777,9 +1916,13 @@ export default function App() {
 
   const createPlaylist = async () => {
     if (!newPlName.trim()) return;
-    await plCreate(newPlName.trim());
-    setNewPlName(""); setShowCreatePl(false);
-    loadPlaylists(); toast("✓ Playlist created");
+    await plCreate(newPlName.trim(), newPlPublic);
+    setNewPlName(""); setNewPlPublic(false); setShowCreatePl(false);
+    loadPlaylists(); toast(`✓ Playlist created${newPlPublic ? " (public)" : ""}`);
+  };
+
+  const signOut = async () => {
+    await sbSignOut(); setUser(null); setPlaylists([]); toast("Signed out");
   };
   const deletePlaylist = async (id) => {
     await plDelete(id); loadPlaylists(); toast("Playlist deleted");
@@ -1869,14 +2012,21 @@ export default function App() {
       )}
 
       {/* LYRICS */}
+      {/* AUTH MODAL */}
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onLogin={d => { setUser({ id: getUserId(), email: d.user?.email }); loadPlaylists(); }} />}
+
       {/* CREATE PLAYLIST MODAL */}
       {showCreatePl && (
         <div className="pl-modal-backdrop" onClick={() => setShowCreatePl(false)}>
           <div className="pl-modal" onClick={e => e.stopPropagation()}>
             <div className="pl-modal-title">New Playlist</div>
             <input className="pl-modal-input" placeholder="Playlist name…" value={newPlName} onChange={e => setNewPlName(e.target.value)} onKeyDown={e => e.key === "Enter" && createPlaylist()} autoFocus />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)" }}>{newPlPublic ? "Public — anyone can see this" : "Private — only you"}</span>
+              <Toggle checked={newPlPublic} onChange={setNewPlPublic} />
+            </div>
             <div className="pl-modal-btns">
-              <button className="pl-modal-btn" onClick={() => { setShowCreatePl(false); setNewPlName(""); }}>Cancel</button>
+              <button className="pl-modal-btn" onClick={() => { setShowCreatePl(false); setNewPlName(""); setNewPlPublic(false); }}>Cancel</button>
               <button className="pl-modal-btn primary" onClick={createPlaylist}>Create</button>
             </div>
           </div>
@@ -2050,6 +2200,14 @@ export default function App() {
                   ? <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg>
                   : <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>}
               </button>
+              {user
+                ? <button className="user-chip" onClick={signOut} title="Sign out">
+                    <div className="user-avatar">{(user.email?.[0] || "U").toUpperCase()}</div>
+                    {user.email?.split("@")[0] || "me"}
+                  </button>
+                : <button className="icon-btn" title="Sign in" onClick={() => setAuthOpen(true)}>
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  </button>}
             </div>
           </div>
 
@@ -2122,29 +2280,41 @@ export default function App() {
           {/* LIBRARY — custom playlists */}
           {view === "library" && (
             <div>
-              <div className="ph" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div><div className="pt">Library</div><div className="ps">{playlists.length} playlists</div></div>
-                <button className="pl-create-btn" onClick={() => setShowCreatePl(true)}>
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-                  New playlist
-                </button>
+              <div className="ph" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div><div className="pt">Library</div><div className="ps">{playlists.length} playlists{!user ? " · sign in to create" : ""}</div></div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ position: "relative" }}>
+                    <svg style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "var(--tx3)", pointerEvents: "none" }} width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input style={{ paddingLeft: 26, paddingRight: 10, height: 28, background: "var(--bg3)", border: "var(--line)", borderRadius: "var(--r)", fontSize: 12, fontFamily: "'Geist',sans-serif", color: "var(--tx)", outline: "none", width: 160 }} placeholder="Search playlists…" value={plSearch} onChange={e => setPlSearch(e.target.value)} />
+                  </div>
+                  {user && <button className="pl-create-btn" onClick={() => setShowCreatePl(true)}>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                    New
+                  </button>}
+                  {!user && <button className="pl-create-btn" onClick={() => setAuthOpen(true)}>Sign in</button>}
+                </div>
               </div>
-              {playlists.length === 0
-                ? <div className="empty"><div className="empty-title">No playlists yet</div><div className="empty-sub">Create one to organise your music</div></div>
-                : <div className="cgrid">
-                    {playlists.map(pl => (
-                      <div key={pl.id} className="pl-card gc" onClick={() => openCustomPlaylist(pl)}>
-                        <div className="pl-card-icon gc-img" style={{ aspectRatio: 1 }}>
-                          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
-                        </div>
-                        <div className="pl-card-title">{pl.name}</div>
-                        <div className="pl-card-sub">{pl.playlist_tracks?.[0]?.count ?? 0} tracks</div>
-                        <button className="pl-card-delete" onClick={e => { e.stopPropagation(); deletePlaylist(pl.id); }}>
-                          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                        </button>
+              {(() => {
+                const filtered = playlists.filter(pl => !plSearch || pl.name.toLowerCase().includes(plSearch.toLowerCase()));
+                if (filtered.length === 0) return <div className="empty"><div className="empty-title">{plSearch ? `No playlists matching "${plSearch}"` : "No playlists yet"}</div><div className="empty-sub">{!user ? "Sign in to create playlists" : "Create one to organise your music"}</div></div>;
+                return <div className="cgrid">
+                  {filtered.map(pl => (
+                    <div key={pl.id} className="pl-card gc" onClick={() => openCustomPlaylist(pl)}>
+                      <div className="pl-card-icon gc-img" style={{ aspectRatio: 1 }}>
+                        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
                       </div>
-                    ))}
-                  </div>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div className="pl-card-title" style={{ flex: 1 }}>{pl.name}</div>
+                        <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 9, fontWeight: 600, letterSpacing: ".06em", color: pl.is_public ? "var(--green)" : "var(--tx3)", border: `1px solid ${pl.is_public ? "var(--green)" : "var(--border)"}`, borderRadius: 3, padding: "1px 4px", flexShrink: 0 }}>{pl.is_public ? "PUB" : "PRV"}</span>
+                      </div>
+                      <div className="pl-card-sub">{pl.playlist_tracks?.[0]?.count ?? 0} tracks</div>
+                      {user && pl.user_id === user.id && <button className="pl-card-delete" onClick={e => { e.stopPropagation(); deletePlaylist(pl.id); }}>
+                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                      </button>}
+                    </div>
+                  ))}
+                </div>;
+              })()}
             </div>
           )}
 
