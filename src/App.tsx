@@ -610,6 +610,39 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
   );
 });
 
+/* ─── WAVE ANIMATION CONTROLLER (module-level, zero React involvement) ── */
+const waveAnim = {
+  _raf: null,
+  _els: null,
+  _base: null,
+  start(els, base) {
+    this.stop();
+    this._els = els;
+    this._base = base;
+    let start = null;
+    const tick = (ts) => {
+      if (!this._els) return;
+      if (!start) start = ts;
+      const t = (ts - start) / 400;
+      for (let i = 0; i < this._els.length; i++) {
+        const el = this._els[i];
+        if (!el) continue;
+        const barI = i < 8 ? i : 15 - i;
+        const h = this._base[barI] ?? 0.3;
+        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + barI * 0.42)) * 0.4 + Math.sin(t * 7 + barI * 1.1) * 0.07));
+        el.style.transform = `scaleY(${v.toFixed(3)})`;
+        el.style.opacity = (0.08 + v * 0.35).toFixed(3);
+      }
+      this._raf = requestAnimationFrame(tick);
+    };
+    this._raf = requestAnimationFrame(tick);
+  },
+  stop() {
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
+    this._els = null;
+  },
+};
+
 /* ─── WAVE BARS (fully isolated — never re-renders from parent prop changes) ── */
 const WaveBars = memo(({ side, barEls, offset }) => (
   <div className="fs-vinyl-waves">
@@ -672,7 +705,6 @@ const FullscreenView = memo(({
 }) => {
   const [activeTab, setActiveTab] = useState("queue");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const beatRef = useRef(null);
   const baseHeights = useRef([]);
   const barEls = useRef([]);
   const isLiked = liked.some(t => t.id === current?.id);
@@ -689,32 +721,16 @@ const FullscreenView = memo(({
       const barI = i < 8 ? i : 15 - i;
       if (el) { el.style.transform = `scaleY(${baseHeights.current[barI].toFixed(3)})`; el.style.opacity = (0.08 + baseHeights.current[barI] * 0.35).toFixed(3); }
     });
+    if (playing) waveAnim.start(barEls.current, baseHeights.current);
   }, [current?.id]);
 
   useEffect(() => {
-    cancelAnimationFrame(beatRef.current);
-    if (!playing) return;
-    let start = null;
-    const tick = (ts) => {
-      if (!beatRef.current) return;
-      if (!start) start = ts;
-      const t = (ts - start) / 400;
-      barEls.current.forEach((el, i) => {
-        if (!el) return;
-        const barI = i < 8 ? i : 15 - i;
-        const h = baseHeights.current[barI] ?? 0.3;
-        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + barI * 0.42)) * 0.4 + Math.sin(t * 7 + barI * 1.1) * 0.07));
-        el.style.transform = `scaleY(${v.toFixed(3)})`;
-        el.style.opacity = (0.08 + v * 0.35).toFixed(3);
-      });
-      beatRef.current = requestAnimationFrame(tick);
-    };
-    beatRef.current = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(beatRef.current); beatRef.current = null; };
+    if (playing) waveAnim.start(barEls.current, baseHeights.current);
+    else waveAnim.stop();
+    return () => waveAnim.stop();
   }, [playing]);
 
-  // Always cancel RAF on unmount
-  useEffect(() => () => { cancelAnimationFrame(beatRef.current); beatRef.current = null; }, []);
+  useEffect(() => () => waveAnim.stop(), []);
 
   useEffect(() => {
     const fn = e => {
