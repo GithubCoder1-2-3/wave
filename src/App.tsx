@@ -391,7 +391,7 @@ button, input, select { transition: var(--trans); }
 .fs-art-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
 .fs-vinyl-waves {
   flex: 1;
-  height: clamp(200px, 26vw, 320px);
+  height: clamp(140px, 18vw, 240px);
   pointer-events: none;
   display: flex; align-items: center; justify-content: space-evenly;
   flex-shrink: 1;
