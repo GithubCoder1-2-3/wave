@@ -1021,21 +1021,23 @@ const TRow = memo(({ track, index, list, showAlbum, currentId, playing, bufferin
       {showAlbum ? <td className="td-album">{track.album?.title}</td> : null}
       <td className="td-dur">{fmt(track.duration)}</td>
       <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-        {onSimilar && (
-          <button className="like-btn" title="Similar tracks" onClick={e => { e.stopPropagation(); onSimilar(track); }} style={{ marginRight: 2 }}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9" /></svg>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
+          {onSimilar && (
+            <button className="like-btn" title="Similar tracks" onClick={e => { e.stopPropagation(); onSimilar(track); }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9" /></svg>
+            </button>
+          )}
+          {onAddToPlaylist && (
+            <button className="like-btn" title="Add to playlist" onClick={e => { e.stopPropagation(); onAddToPlaylist(track, e); }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+            </button>
+          )}
+          <button className={`like-btn${isLiked ? " liked" : ""}`} onClick={e => { e.stopPropagation(); onLike(track); }}>
+            <svg width="13" height="13" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
           </button>
-        )}
-        {onAddToPlaylist && (
-          <button className="like-btn" title="Add to playlist" onClick={e => { e.stopPropagation(); onAddToPlaylist(track, e); }} style={{ marginRight: 2 }}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-          </button>
-        )}
-        <button className={`like-btn${isLiked ? " liked" : ""}`} onClick={e => { e.stopPropagation(); onLike(track); }}>
-          <svg width="13" height="13" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </button>
+        </div>
       </td>
     </tr>
   );
@@ -1803,7 +1805,7 @@ export default function App() {
     const cached = await similarGet(track.id);
     if (cached) { setSimilar(cached); setSimilarLoading(false); return; }
     try {
-      const d = await dz(`/track/${track.id}/related?limit=20`);
+      const d = await dz(`/track/${track.id}/radio?limit=20`);
       const tracks = d.data || [];
       setSimilar(tracks);
       if (tracks.length) similarSet(track.id, tracks);
