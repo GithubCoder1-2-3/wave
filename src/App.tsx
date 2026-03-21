@@ -493,7 +493,7 @@ button, input, select { transition: var(--trans); }
 .fs-close:hover { color: #fafafa; background: rgba(255,255,255,.1); }
 
 .fs-eq { display: flex; align-items: flex-end; gap: 1.5px; height: 12px; }
-.fs-eq-b { width: 2.5px; background: #fafafa; border-radius: 1px; animation: eqa .6s ease-in-out infinite alternate; }
+.fs-eq-b { width: 2.5px; background: #fafafa; border-radius: 1px; animation: eqa .6s ease-in-out infinite alternate; animation-play-state: inherit; }
 .fs-eq-b:nth-child(2) { animation-delay: .15s; }
 .fs-eq-b:nth-child(3) { animation-delay: .3s; }
 
@@ -509,7 +509,229 @@ button, input, select { transition: var(--trans); }
   .fs-controls { padding: 12px 16px 14px; }
   .fs-btn-row { gap: 12px; }
 }
+
+/* ── COMMAND PALETTE ── */
+.cmd-backdrop { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); animation: fadeIn .15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cmd-box { position: fixed; top: 18vh; left: 50%; transform: translateX(-50%); z-index: 301; width: min(580px, 92vw); background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); box-shadow: var(--shadow-lg); animation: cmdIn .15s cubic-bezier(.4,0,.2,1); overflow: hidden; }
+@keyframes cmdIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(.98); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+.cmd-input-wrap { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: var(--line); }
+.cmd-input { flex: 1; background: none; border: none; outline: none; font-size: 14px; font-family: 'Geist', sans-serif; color: var(--tx); }
+.cmd-input::placeholder { color: var(--tx3); }
+.cmd-hint { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx3); white-space: nowrap; }
+.cmd-results { max-height: 360px; overflow-y: auto; }
+.cmd-section { font-family: 'Geist Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--tx3); padding: 8px 16px 4px; }
+.cmd-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; cursor: pointer; transition: background .1s; }
+.cmd-item:hover, .cmd-item.selected { background: var(--bg3); }
+.cmd-item-icon { width: 28px; height: 28px; border-radius: 3px; background: var(--bg3); border: var(--line); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--tx3); }
+.cmd-item-img { width: 28px; height: 28px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
+.cmd-item-label { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-item-meta { overflow: hidden; flex: 1; }
+.cmd-item-kbd { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx3); flex-shrink: 0; }
+.cmd-empty { padding: 32px 16px; text-align: center; color: var(--tx3); font-size: 12px; font-family: 'Geist Mono', monospace; }
+
+/* ── LYRICS OVERLAY ── */
+.lyrics-panel { position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.82); backdrop-filter: blur(24px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; animation: fadeIn .2s ease; }
+.lyrics-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,.6); transition: all .1s; }
+.lyrics-close:hover { color: #fafafa; background: rgba(255,255,255,.14); }
+.lyrics-track { font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 24px; }
+.lyrics-body { max-width: 600px; width: 100%; max-height: 70vh; overflow-y: auto; text-align: center; }
+.lyrics-body::-webkit-scrollbar { width: 0; }
+.lyrics-line { font-size: clamp(16px, 2.2vw, 22px); font-weight: 600; letter-spacing: -.02em; color: rgba(255,255,255,.85); line-height: 1.9; cursor: default; transition: color .2s; }
+.lyrics-line:hover { color: #fafafa; }
+.lyrics-line.empty { height: 1.2em; }
+.lyrics-loading { color: rgba(255,255,255,.3); font-family: 'Geist Mono', monospace; font-size: 12px; }
+
+/* ── SLEEP TIMER ── */
+.sleep-btn { position: relative; }
+.sleep-badge { position: absolute; top: -4px; right: -4px; background: var(--tx); color: var(--bg); font-family: 'Geist Mono', monospace; font-size: 8px; font-weight: 700; padding: 1px 3px; border-radius: 2px; pointer-events: none; }
+
+/* ── STATS PAGE ── */
+.stats-hero { padding: 24px 20px 20px; border-bottom: var(--line); display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.stats-num { font-size: 48px; font-weight: 700; letter-spacing: -.04em; font-family: 'Geist Mono', monospace; line-height: 1; }
+.stats-label { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; margin-top: 4px; text-transform: uppercase; letter-spacing: .08em; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); border-left: var(--line); }
+.stats-grid > * { border-right: var(--line); border-bottom: var(--line); }
+.stats-cell { padding: 16px; }
+.stats-cell-val { font-size: 22px; font-weight: 700; letter-spacing: -.03em; font-family: 'Geist Mono', monospace; }
+.stats-cell-key { font-size: 10px; color: var(--tx3); font-family: 'Geist Mono', monospace; text-transform: uppercase; letter-spacing: .07em; margin-top: 3px; }
+.stats-bar-row { display: flex; align-items: center; gap: 10px; padding: 7px 16px; border-bottom: var(--line); }
+.stats-bar-label { font-size: 12px; font-weight: 500; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stats-bar-track { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; }
+.stats-bar-fill { height: 100%; background: var(--tx); border-radius: 2px; }
+.stats-bar-count { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--tx3); min-width: 28px; text-align: right; }
+
+/* ── ACCENT TINT ── */
+.accent-tint { transition: --accent-tint .6s; }
 `;
+
+/* ─── COMMAND PALETTE ───────────────────────────────────────────── */
+const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, onPlay, onNav, onAction }) => {
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const actions = [
+    { label: "Saved tracks", sub: `${liked.length} tracks`, icon: "♥", action: () => onNav("liked") },
+    { label: "Browse genres", sub: "explore", icon: "◈", action: () => onNav("browse") },
+    { label: "Stats", sub: "listening history", icon: "↗", action: () => onNav("stats") },
+    { label: "Settings", sub: "preferences", icon: "⚙", action: () => onNav("settings") },
+    { label: "Toggle fullscreen", sub: "F", icon: "⛶", action: () => onAction("fullscreen") },
+    { label: "Toggle shuffle", sub: "S", icon: "⇄", action: () => onAction("shuffle") },
+    { label: "Toggle dark mode", sub: "", icon: "◑", action: () => onAction("darkmode") },
+    { label: "Sleep timer", sub: "", icon: "☽", action: () => onAction("sleep") },
+    { label: "Show lyrics", sub: "", icon: "♪", action: () => onAction("lyrics") },
+  ];
+
+  const trackPool = [...(q ? [] : recent.slice(0, 5)), ...(q ? [...liked, ...charts] : [])];
+  const filtered = q
+    ? { actions: actions.filter(a => a.label.toLowerCase().includes(q.toLowerCase())), tracks: trackPool.filter(t => t.title?.toLowerCase().includes(q.toLowerCase()) || t.artist?.name?.toLowerCase().includes(q.toLowerCase())).slice(0, 6) }
+    : { actions, tracks: recent.slice(0, 4) };
+
+  const flat = [...filtered.actions, ...filtered.tracks];
+
+  useEffect(() => { setSel(0); }, [q]);
+
+  useEffect(() => {
+    const fn = e => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowDown") { e.preventDefault(); setSel(s => Math.min(s + 1, flat.length - 1)); }
+      if (e.key === "ArrowUp") { e.preventDefault(); setSel(s => Math.max(s - 1, 0)); }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const item = flat[sel];
+        if (!item) return;
+        if (item.action) { item.action(); onClose(); }
+        else { onPlay(item, [item], 0); onClose(); }
+      }
+    };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [flat, sel, onClose]);
+
+  let idx = 0;
+  return (
+    <>
+      <div className="cmd-backdrop" onClick={onClose} />
+      <div className="cmd-box">
+        <div className="cmd-input-wrap">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--tx3)", flexShrink: 0 }} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+          <input ref={inputRef} className="cmd-input" placeholder="Search tracks, jump to page…" value={q} onChange={e => setQ(e.target.value)} />
+          <span className="cmd-hint">esc to close</span>
+        </div>
+        <div className="cmd-results">
+          {filtered.actions.length > 0 && <>
+            <div className="cmd-section">{q ? "Actions" : "Quick actions"}</div>
+            {filtered.actions.map(a => {
+              const i = idx++;
+              return <div key={a.label} className={`cmd-item${sel === i ? " selected" : ""}`} onMouseEnter={() => setSel(i)} onClick={() => { a.action(); onClose(); }}>
+                <div className="cmd-item-icon"><span style={{ fontSize: 12 }}>{a.icon}</span></div>
+                <div className="cmd-item-meta"><div className="cmd-item-label">{a.label}</div>{a.sub && <div className="cmd-item-sub">{a.sub}</div>}</div>
+              </div>;
+            })}
+          </>}
+          {filtered.tracks.length > 0 && <>
+            <div className="cmd-section">{q ? "Tracks" : "Recently played"}</div>
+            {filtered.tracks.map(t => {
+              const i = idx++;
+              return <div key={t.id} className={`cmd-item${sel === i ? " selected" : ""}`} onMouseEnter={() => setSel(i)} onClick={() => { onPlay(t, [t], 0); onClose(); }}>
+                {t.album?.cover_small ? <img className="cmd-item-img" src={t.album.cover_small} alt="" /> : <div className="cmd-item-icon"><svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /></svg></div>}
+                <div className="cmd-item-meta"><div className="cmd-item-label">{t.title}</div><div className="cmd-item-sub">{t.artist?.name}</div></div>
+                <span className="cmd-item-kbd">{fmt(t.duration)}</span>
+              </div>;
+            })}
+          </>}
+          {flat.length === 0 && <div className="cmd-empty">no results for "{q}"</div>}
+        </div>
+      </div>
+    </>
+  );
+});
+
+/* ─── LYRICS OVERLAY ────────────────────────────────────────────── */
+const LyricsOverlay = memo(({ current, onClose }) => {
+  const [lines, setLines] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!current) return;
+    setLoading(true); setLines(null);
+    const q = encodeURIComponent(`${current.title} ${current.artist?.name}`);
+    fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(current.artist?.name || "")}&track_name=${encodeURIComponent(current.title || "")}&duration=${current.duration || 0}`)
+      .then(r => r.json())
+      .then(d => {
+        const text = d.plainLyrics || d.syncedLyrics?.replace(/\[\d+:\d+\.\d+\]/g, "").trim();
+        if (text) setLines(text.split("\n"));
+        else setLines(null);
+      })
+      .catch(() => setLines(null))
+      .finally(() => setLoading(false));
+  }, [current?.id]);
+
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+
+  return (
+    <div className="lyrics-panel">
+      <button className="lyrics-close" onClick={onClose}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
+      </button>
+      <div className="lyrics-track">{current?.title} · {current?.artist?.name}</div>
+      <div className="lyrics-body">
+        {loading && <div className="lyrics-loading">fetching lyrics…</div>}
+        {!loading && !lines && <div className="lyrics-loading">no lyrics found for this track</div>}
+        {lines && lines.map((l, i) =>
+          l.trim() ? <div key={i} className="lyrics-line">{l}</div> : <div key={i} className="lyrics-line empty" />
+        )}
+      </div>
+    </div>
+  );
+});
+
+/* ─── STATS PAGE ────────────────────────────────────────────────── */
+const StatsPage = memo(({ recent, liked }) => {
+  const totalMin = Math.round(recent.reduce((a, t) => a + (t.duration || 0), 0) / 60);
+  const artistCounts = {};
+  recent.forEach(t => { const n = t.artist?.name; if (n) artistCounts[n] = (artistCounts[n] || 0) + 1; });
+  const topArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxCount = topArtists[0]?.[1] || 1;
+  return (
+    <div>
+      <div className="ph"><div className="pt">Stats</div><div className="ps">your listening history · {recent.length} tracks played</div></div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderLeft: "var(--line)" }}>
+        {[
+          { val: recent.length, key: "Tracks played" },
+          { val: totalMin, key: "Minutes listened" },
+          { val: liked.length, key: "Saved tracks" },
+          { val: new Set(recent.map(t => t.artist?.name)).size, key: "Unique artists" },
+          { val: new Set(recent.map(t => t.album?.title)).size, key: "Unique albums" },
+          { val: Math.round(totalMin / 60 * 10) / 10, key: "Hours total" },
+        ].map(s => (
+          <div key={s.key} className="stats-cell" style={{ borderRight: "var(--line)", borderBottom: "var(--line)" }}>
+            <div className="stats-cell-val">{s.val}</div>
+            <div className="stats-cell-key">{s.key}</div>
+          </div>
+        ))}
+      </div>
+      {topArtists.length > 0 && <>
+        <div className="sec-hd" style={{ marginTop: 0 }}><span className="sec-lbl">Top Artists</span></div>
+        {topArtists.map(([name, count]) => (
+          <div key={name} className="stats-bar-row">
+            <div className="stats-bar-label">{name}</div>
+            <div className="stats-bar-track"><div className="stats-bar-fill" style={{ width: `${(count / maxCount) * 100}%` }} /></div>
+            <div className="stats-bar-count">{count}</div>
+          </div>
+        ))}
+      </>}
+      {recent.length === 0 && <div className="empty"><div className="empty-title">No history yet</div><div className="empty-sub">play some tracks to see stats</div></div>}
+    </div>
+  );
+});
 
 /* ─── LOGO COMPONENT ────────────────────────────────────────────── */
 const WaveLogo = ({ size = 20 }) => {
@@ -901,9 +1123,7 @@ const FullscreenView = memo(({
           </div>
 
           <div className="fs-side-controls" style={{ justifyContent: "flex-end" }}>
-            {playing && !buffering && (
-              <div className="fs-eq"><div className="fs-eq-b" /><div className="fs-eq-b" /><div className="fs-eq-b" /></div>
-            )}
+            <div className="fs-eq" style={{ animationPlayState: playing && !buffering ? "running" : "paused" }}><div className="fs-eq-b" /><div className="fs-eq-b" /><div className="fs-eq-b" /></div>
             <button className="fs-action-btn" onClick={onClose} title="Exit fullscreen (F / Esc)" style={{ marginLeft: 8 }}>
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
@@ -1062,6 +1282,11 @@ export default function App() {
   const [autoplay, setAutoplay] = useState(() => lsGet("autoplay", true));
   // NEW: Fullscreen state
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
+  const [sleepMins, setSleepMins] = useState(null);
+  const [accentColor, setAccentColor] = useState(null);
+  const sleepRef = useRef(null);
 
   const ytRef = useRef(null);
   const qRef = useRef([]), qIdxRef = useRef(0);
@@ -1107,7 +1332,7 @@ export default function App() {
     const handle = (e) => {
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+      if (e.code === "Space") { e.preventDefault(); ytRef.current?.getPlayerState?.() === 1 ? ytRef.current.pauseVideo() : ytRef.current?.playVideo(); }
       if (e.code === "ArrowRight" && e.metaKey) advance(1);
       if (e.code === "ArrowLeft" && e.metaKey) advance(-1);
       if (e.code === "KeyL") { if (current) toggleLike(current); }
@@ -1115,12 +1340,47 @@ export default function App() {
       if (e.code === "KeyQ") setShowQueue(q => !q);
       if (e.code === "KeyB") setSidebarOpen(s => !s);
       if (e.code === "KeyF") setFullscreenOpen(f => !f); // NEW
+      if ((e.metaKey || e.ctrlKey) && e.code === "KeyK") { e.preventDefault(); setCmdOpen(c => !c); }
       if (e.code === "Comma") changeVol(Math.max(0, volRef.current - 10));
       if (e.code === "Period") changeVol(Math.min(100, volRef.current + 10));
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
   }, [current]);
+
+  // Sleep timer
+  useEffect(() => {
+    clearTimeout(sleepRef.current);
+    if (sleepMins) {
+      sleepRef.current = setTimeout(() => {
+        ytRef.current?.pauseVideo?.();
+        setSleepMins(null);
+        toast("💤 Sleep timer — paused");
+      }, sleepMins * 60 * 1000);
+    }
+    return () => clearTimeout(sleepRef.current);
+  }, [sleepMins]);
+
+  // Accent tint from album art dominant color
+  useEffect(() => {
+    if (!current?.album?.cover_small) { setAccentColor(null); return; }
+    const img = new Image(); img.crossOrigin = "anonymous";
+    img.src = current.album.cover_small;
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas"); c.width = c.height = 1;
+        c.getContext("2d").drawImage(img, 0, 0, 1, 1);
+        const [r, g, b] = c.getContext("2d").getImageData(0, 0, 1, 1).data;
+        if (Math.max(r, g, b) > 40 && r + g + b < 680) setAccentColor(`rgb(${r},${g},${b})`);
+        else setAccentColor(null);
+      } catch { setAccentColor(null); }
+    };
+  }, [current?.id]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent", accentColor || (darkMode ? "#3b82f6" : "#0070f3"));
+    document.documentElement.style.setProperty("--accent-h", accentColor || (darkMode ? "#2563eb" : "#0060df"));
+  }, [accentColor, darkMode]);
 
   const initYT = () => {
     if (ytRef.current) return;
@@ -1249,6 +1509,13 @@ export default function App() {
   const tp = { explicitFilter, currentId: current?.id, playing, buffering, liked, onPlay: doPlay, onLike: toggleLike };
 
   // Related tracks = current queue or search results or charts
+  const handleSleep = useCallback(() => {
+    const opts = [15, 30, 45, 60];
+    const next = sleepMins ? opts[(opts.indexOf(sleepMins) + 1) % opts.length] : opts[0];
+    if (sleepMins && opts.indexOf(sleepMins) === opts.length - 1) { setSleepMins(null); toast("Sleep timer off"); }
+    else { setSleepMins(next); toast(`💤 Sleep in ${next} min`); }
+  }, [sleepMins]);
+
   const relatedTracks = (results?.tracks || charts).filter(t => t.id !== current?.id).slice(0, 30);
 
   return (
@@ -1260,6 +1527,30 @@ export default function App() {
       <div className="toast-area">
         {toasts.map(t => <div key={t.id} className="toast">{t.msg}</div>)}
       </div>
+
+      {/* COMMAND PALETTE */}
+      {cmdOpen && (
+        <CommandPalette
+          onClose={() => setCmdOpen(false)}
+          recent={recent}
+          liked={liked}
+          charts={charts}
+          queue={queue}
+          current={current}
+          onPlay={doPlay}
+          onNav={v => { setView(v); setCmdOpen(false); }}
+          onAction={a => {
+            if (a === "fullscreen") setFullscreenOpen(f => !f);
+            if (a === "shuffle") setShuffle(s => !s);
+            if (a === "darkmode") setDarkMode(d => !d);
+            if (a === "sleep") handleSleep();
+            if (a === "lyrics") setLyricsOpen(l => !l);
+          }}
+        />
+      )}
+
+      {/* LYRICS */}
+      {lyricsOpen && <LyricsOverlay current={current} onClose={() => setLyricsOpen(false)} />}
 
       {/* FULLSCREEN */}
       {fullscreenOpen && (
@@ -1333,6 +1624,7 @@ export default function App() {
                   { v: "home", label: "Overview", ico: <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg> },
                   { v: "browse", label: "Browse", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg> },
                   { v: "liked", label: "Saved", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg> },
+                  { v: "stats", label: "Stats", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" /></svg> },
                   { v: "settings", label: "Settings", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> },
                 ].map(n => (
                   <div key={n.v} className={`nav-item${view === n.v ? " active" : ""}`} onClick={() => setView(n.v)}>
@@ -1389,6 +1681,17 @@ export default function App() {
               {explicitFilter && <span className="chip warn">E filter on</span>}
               {buffering && <span className="chip">buffering…</span>}
               {playing && !buffering && <span className="chip live">● live</span>}
+              {sleepMins && <span className="chip" style={{ borderColor: "var(--accent)", color: "var(--accent)" }}>💤 {sleepMins}m</span>}
+              <button className="icon-btn" title="Command palette (⌘K)" onClick={() => setCmdOpen(c => !c)}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></svg>
+              </button>
+              <button className="icon-btn" title="Lyrics" onClick={() => setLyricsOpen(l => !l)}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+              </button>
+              <button className="icon-btn sleep-btn" title="Sleep timer" onClick={handleSleep}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg>
+                {sleepMins && <span className="sleep-badge">{sleepMins}</span>}
+              </button>
               <button className="icon-btn" title="Queue (Q)" onClick={() => setShowQueue(q => !q)}>
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
               </button>
@@ -1461,6 +1764,8 @@ export default function App() {
               {liked.length === 0 ? <div className="empty"><div className="empty-title">Nothing saved yet</div><div className="empty-sub">Press L or click ♥ on any track</div></div> : <TTable tracks={liked} {...tp} />}
             </div>
           )}
+
+          {!loading && view === "stats" && <StatsPage recent={recent} liked={liked} />}
 
           {!loading && view === "browse" && (
             <div>
@@ -1623,6 +1928,7 @@ export default function App() {
                     <span className="kbd">Q</span><span className="kbd-desc">Show / hide queue</span>
                     <span className="kbd">B</span><span className="kbd-desc">Toggle sidebar</span>
                     <span className="kbd">F</span><span className="kbd-desc">Toggle fullscreen</span>
+                    <span className="kbd">⌘ K</span><span className="kbd-desc">Command palette</span>
                     <span className="kbd">,</span><span className="kbd-desc">Volume down</span>
                     <span className="kbd">.</span><span className="kbd-desc">Volume up</span>
                   </div>
