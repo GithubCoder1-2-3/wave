@@ -83,16 +83,13 @@ html, body { height: 100%; font-family: 'Geist', sans-serif; background: var(--b
 * { transition: var(--trans); }
 button, input, select { transition: var(--trans); }
 
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* ── LAYOUT ── */
 .shell { display: grid; grid-template-columns: var(--nav-w, 220px) 1fr; grid-template-rows: 1fr 82px; height: 100vh; transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
 .shell.nav-collapsed { --nav-w: 0px; }
 
-/* ── SIDEBAR ── */
 .nav { grid-row: 1/2; background: var(--bg); border-right: var(--line); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 .nav-inner { width: 220px; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
 .nav-header { padding: 0 14px; height: 48px; display: flex; align-items: center; gap: 9px; border-bottom: var(--line); flex-shrink: 0; }
@@ -118,7 +115,6 @@ button, input, select { transition: var(--trans); }
 .nav-now-title { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-now-artist { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── TOPBAR ── */
 .topbar { position: sticky; top: 0; z-index: 30; height: 48px; background: rgba(var(--bg-rgb, 255,255,255), .88); backdrop-filter: blur(12px) saturate(180%); border-bottom: var(--line); display: flex; align-items: center; padding: 0 16px; gap: 10px; }
 [data-theme="dark"] .topbar { background: rgba(9,9,11,.88); }
 .topbar-left { display: flex; align-items: center; gap: 8px; }
@@ -135,10 +131,8 @@ button, input, select { transition: var(--trans); }
 .chip.live { border-color: var(--green); color: var(--green); background: var(--green-bg); }
 .chip.warn { border-color: var(--yellow); color: var(--yellow); background: rgba(245,166,35,.08); }
 
-/* ── MAIN ── */
 .main { grid-row: 1/2; overflow-y: auto; background: var(--bg); position: relative; }
 
-/* ── PAGE ── */
 .ph { padding: 20px 20px 16px; border-bottom: var(--line); }
 .pt { font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
 .ps { font-size: 11px; color: var(--tx3); margin-top: 3px; font-family: 'Geist Mono', monospace; }
@@ -148,7 +142,6 @@ button, input, select { transition: var(--trans); }
 .sec-act { font-size: 11px; color: var(--tx3); cursor: pointer; font-family: 'Geist Mono', monospace; transition: color .1s; }
 .sec-act:hover { color: var(--tx); }
 
-/* ── TRACK TABLE ── */
 .ttbl { width: 100%; border-collapse: collapse; }
 .ttbl thead { border-bottom: var(--line); }
 .ttbl th { padding: 7px 14px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--tx3); text-align: left; font-family: 'Geist Mono', monospace; white-space: nowrap; }
@@ -171,7 +164,6 @@ button, input, select { transition: var(--trans); }
 .like-btn:hover { color: var(--tx); }
 .like-btn.liked { color: var(--red); }
 
-/* ── CARDS ── */
 .cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); border-left: var(--line); }
 .cgrid > * { border-right: var(--line); border-bottom: var(--line); }
 .gc { padding: 14px; cursor: pointer; position: relative; overflow: hidden; }
@@ -183,7 +175,6 @@ button, input, select { transition: var(--trans); }
 .gc-play { position: absolute; bottom: 12px; right: 12px; width: 28px; height: 28px; background: var(--tx); border-radius: var(--r2); display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(.8) translateY(4px); transition: all .15s; }
 .gc:hover .gc-play { opacity: 1; transform: scale(1) translateY(0); }
 
-/* ── GENRES ── */
 .ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); border-left: var(--line); }
 .ggrid > * { border-right: var(--line); border-bottom: var(--line); }
 .gcel { padding: 18px 14px; cursor: pointer; position: relative; overflow: hidden; min-height: 76px; }
@@ -193,7 +184,6 @@ button, input, select { transition: var(--trans); }
 .gcel::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--tx); transform: scaleX(0); transform-origin: left; transition: transform .2s; }
 .gcel:hover::after { transform: scaleX(1); }
 
-/* ── ENTITY HERO ── */
 .ehero { display: grid; grid-template-columns: 160px 1fr; border-bottom: var(--line); }
 .ehero-img-cell { border-right: var(--line); background: var(--bg2); display: flex; align-items: center; justify-content: center; padding: 20px; }
 .ehero-img { width: 120px; height: 120px; border-radius: var(--r2); object-fit: cover; border: var(--line); }
@@ -207,7 +197,6 @@ button, input, select { transition: var(--trans); }
 .play-hero-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--tx); color: var(--bg); border: none; border-radius: var(--r2); padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Geist', sans-serif; margin-top: 8px; }
 .play-hero-btn:hover { opacity: .85; }
 
-/* ── PLAYER ── */
 .player { grid-column: 1/3; background: var(--surface); border-top: 2px solid var(--tx); display: grid; grid-template-columns: 260px 1fr 220px; align-items: stretch; position: relative; }
 .pl-track { border-right: var(--line); display: flex; align-items: center; gap: 10px; padding: 0 14px; overflow: hidden; }
 .pl-thumb { width: 44px; height: 44px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
@@ -230,32 +219,24 @@ button, input, select { transition: var(--trans); }
 .vol-range { -webkit-appearance: none; width: 72px; height: 3px; background: var(--bg3); border-radius: 2px; outline: none; cursor: pointer; }
 .vol-range::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--tx); border-radius: 50%; }
 
-/* ── EQ BARS ── */
 .eq { display: flex; align-items: flex-end; gap: 1.5px; height: 12px; }
 .eq-b { width: 2.5px; background: var(--accent); border-radius: 1px; animation: eqa .6s ease-in-out infinite alternate; }
 .eq-b:nth-child(2) { animation-delay: .15s; }
 .eq-b:nth-child(3) { animation-delay: .3s; }
 @keyframes eqa { from { height: 3px; } to { height: 12px; } }
 
-/* ── SPIN ── */
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── LOADING ── */
 .ld { display: flex; align-items: center; justify-content: center; padding: 80px; gap: 8px; color: var(--tx3); font-size: 12px; font-family: 'Geist Mono', monospace; }
 
-/* ── BACK BTN ── */
 .back-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--tx3); cursor: pointer; background: none; border: var(--line); padding: 4px 10px; border-radius: var(--r2); font-family: 'Geist Mono', monospace; transition: all .1s; }
 .back-btn:hover { color: var(--tx); background: var(--bg3); border-color: var(--border2); }
 
-/* ── TOAST ── */
 .toast-area { position: fixed; bottom: 96px; right: 16px; z-index: 100; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
 .toast { background: var(--tx); color: var(--bg); padding: 10px 14px; border-radius: var(--r); font-size: 12px; font-family: 'Geist', sans-serif; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn .2s ease; pointer-events: all; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
-.toast.out { animation: toastOut .2s ease forwards; }
-@keyframes toastOut { to { opacity: 0; transform: translateY(8px) scale(.97); } }
 
-/* ── QUEUE PANEL ── */
 .queue-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.3); }
 .queue-panel { position: fixed; top: 0; right: 0; width: 320px; height: calc(100vh - 82px); background: var(--bg); border-left: 2px solid var(--tx); display: flex; flex-direction: column; z-index: 51; animation: slideIn .2s ease; }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -272,13 +253,11 @@ button, input, select { transition: var(--trans); }
 .queue-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
 .queue-num { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx3); width: 18px; text-align: center; flex-shrink: 0; }
 
-/* ── SETTINGS PAGE ── */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; border-left: var(--line); }
 .settings-grid > * { border-right: var(--line); border-bottom: var(--line); }
 .setting-card { padding: 20px; }
 .setting-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 .setting-card-desc { font-size: 12px; color: var(--tx3); margin-bottom: 14px; font-family: 'Geist Mono', monospace; line-height: 1.5; }
-/* Toggle */
 .toggle-wrap { display: flex; align-items: center; justify-content: space-between; }
 .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
 .toggle input { opacity: 0; width: 0; height: 0; }
@@ -286,14 +265,10 @@ button, input, select { transition: var(--trans); }
 .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: var(--tx3); border-radius: 50%; transition: all .2s; }
 .toggle input:checked + .toggle-slider { background: var(--tx); border-color: var(--tx); }
 .toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--bg); }
-/* Kbd */
 .kbd-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; }
 .kbd { font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; background: var(--bg3); border: var(--line); border-bottom: 2px solid var(--border2); padding: 2px 7px; border-radius: 4px; color: var(--tx2); white-space: nowrap; }
 .kbd-desc { font-size: 12px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
-/* Select */
 .setting-select { width: 100%; padding: 6px 10px; background: var(--bg3); border: var(--line); border-radius: var(--r2); font-size: 12px; font-family: 'Geist Mono', monospace; color: var(--tx); outline: none; cursor: pointer; }
-.setting-select:focus { border-color: var(--border2); }
-/* About card */
 .about-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .about-version { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--tx3); }
 .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -301,7 +276,6 @@ button, input, select { transition: var(--trans); }
 .stat-val { font-size: 18px; font-weight: 700; letter-spacing: -.02em; font-family: 'Geist Mono', monospace; }
 .stat-key { font-size: 10px; color: var(--tx3); margin-top: 2px; font-family: 'Geist Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
 
-/* ── RECENTLY PLAYED ── */
 .recent-strip { display: flex; overflow-x: auto; gap: 0; border-bottom: var(--line); }
 .recent-strip::-webkit-scrollbar { height: 0; }
 .recent-item { flex-shrink: 0; padding: 12px 14px; border-right: var(--line); cursor: pointer; display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 200px; }
@@ -310,19 +284,192 @@ button, input, select { transition: var(--trans); }
 .recent-item-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recent-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
 
-/* ── EMPTY ── */
 .empty { padding: 60px 20px; text-align: center; border-bottom: var(--line); }
 .empty-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .empty-sub { font-size: 12px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
 
 #yt-mount { position: fixed; bottom: -1000px; left: -1000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-/* ── WAVEFORM ── */
-.waveform { display: flex; align-items: center; gap: 1px; height: 20px; }
-.wf-bar { width: 2px; border-radius: 1px; background: var(--accent); opacity: .7; }
+/* ═══════════════════════════════════════════════════════
+   FULLSCREEN MODE
+   ═══════════════════════════════════════════════════════ */
+.fs-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: #09090b;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  animation: fsIn .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fsIn { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: none; } }
 
-/* ── SCROLLED TOPBAR ── */
-.main-topbar-title { font-size: 13px; font-weight: 600; letter-spacing: -.01em; opacity: 0; transition: opacity .2s; }
+.fs-bg {
+  position: absolute; inset: -40px;
+  background-size: cover; background-position: center;
+  filter: blur(60px) saturate(1.4);
+  opacity: .18;
+  pointer-events: none;
+  transition: background-image .6s;
+}
+
+.fs-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.fs-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 48px;
+  border-right: 1px solid rgba(255,255,255,.07);
+  position: relative;
+  gap: 28px;
+}
+
+.fs-art-wrap { position: relative; flex-shrink: 0; }
+.fs-art {
+  width: clamp(200px, 26vw, 320px);
+  height: clamp(200px, 26vw, 320px);
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.12);
+  display: block;
+  transition: transform .4s cubic-bezier(.4,0,.2,1), box-shadow .4s;
+}
+.fs-art.playing {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 24px 64px rgba(0,0,0,.6);
+  transform: scale(1.02);
+}
+.fs-art-placeholder {
+  width: clamp(200px, 26vw, 320px);
+  height: clamp(200px, 26vw, 320px);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  background: #18181b;
+}
+
+.fs-meta { text-align: center; width: 100%; max-width: 380px; }
+.fs-track-title {
+  font-size: clamp(16px, 2vw, 24px);
+  font-weight: 700; letter-spacing: -.03em; color: #fafafa;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
+}
+.fs-track-artist { font-size: 13px; color: rgba(255,255,255,.5); font-family: 'Geist Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fs-track-album { font-size: 11px; color: rgba(255,255,255,.3); font-family: 'Geist Mono', monospace; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.fs-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
+.fs-action-btn {
+  background: none; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 4px; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: rgba(255,255,255,.5); transition: all .1s;
+}
+.fs-action-btn:hover { color: #fafafa; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.25); }
+.fs-action-btn.active { color: #fafafa; border-color: rgba(255,255,255,.4); }
+.fs-action-btn.liked { color: #e5484d; border-color: #e5484d; }
+
+.fs-wave-container {
+  width: 100%; position: relative; height: 48px;
+  display: flex; align-items: flex-end; gap: 1.5px; overflow: hidden; cursor: pointer;
+  max-width: 380px;
+}
+.fs-wave-bar { flex: 1; border-radius: 1px; transition: height .1s, opacity .1s; }
+.fs-wave-bar.played { background: #fafafa; opacity: .9; }
+.fs-wave-bar.current { background: #fafafa; opacity: 1; }
+.fs-wave-bar.upcoming { background: rgba(255,255,255,.2); }
+
+.fs-right { display: flex; flex-direction: column; overflow: hidden; }
+
+.fs-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0; padding: 0 20px; }
+.fs-tab {
+  font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3);
+  padding: 14px 12px; cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all .1s;
+}
+.fs-tab:hover { color: rgba(255,255,255,.6); }
+.fs-tab.active { color: #fafafa; border-bottom-color: #fafafa; }
+
+.fs-queue { flex: 1; overflow-y: auto; padding: 8px 0; }
+.fs-queue-item { display: flex; align-items: center; gap: 10px; padding: 7px 20px; cursor: pointer; transition: background .1s; }
+.fs-queue-item:hover { background: rgba(255,255,255,.04); }
+.fs-queue-item.current { background: rgba(255,255,255,.07); }
+.fs-queue-item img { width: 34px; height: 34px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,.1); flex-shrink: 0; }
+.fs-queue-num { font-family: 'Geist Mono', monospace; font-size: 10px; color: rgba(255,255,255,.25); width: 18px; text-align: center; flex-shrink: 0; }
+.fs-queue-meta { overflow: hidden; flex: 1; }
+.fs-queue-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-queue-name.active { color: #fafafa; }
+.fs-queue-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; }
+.fs-queue-dur { font-family: 'Geist Mono', monospace; font-size: 10px; color: rgba(255,255,255,.25); flex-shrink: 0; }
+
+.fs-related { flex: 1; overflow-y: auto; padding: 12px 0; }
+.fs-related-item { display: flex; align-items: center; gap: 10px; padding: 7px 20px; cursor: pointer; transition: background .1s; }
+.fs-related-item:hover { background: rgba(255,255,255,.04); }
+.fs-related-item img { width: 34px; height: 34px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,.1); }
+.fs-related-meta { overflow: hidden; flex: 1; }
+.fs-related-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-related-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; }
+
+.fs-details { flex: 1; overflow-y: auto; padding: 20px; }
+.fs-detail-row { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,.05); padding: 10px 0; }
+.fs-detail-key { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.25); font-family: 'Geist Mono', monospace; min-width: 90px; padding-top: 1px; }
+.fs-detail-val { font-size: 12px; color: rgba(255,255,255,.7); font-family: 'Geist Mono', monospace; line-height: 1.5; }
+.fs-detail-val a { color: rgba(255,255,255,.5); text-decoration: none; }
+.fs-detail-val a:hover { color: #fafafa; text-decoration: underline; }
+
+.fs-controls {
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: 14px 32px 18px;
+  background: rgba(9,9,11,.7);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+}
+.fs-prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.fs-prog-time { font-family: 'Geist Mono', monospace; font-size: 10px; color: rgba(255,255,255,.35); min-width: 32px; }
+.fs-prog-rail { flex: 1; height: 3px; background: rgba(255,255,255,.12); cursor: pointer; border-radius: 2px; position: relative; }
+.fs-prog-rail:hover .fs-prog-fill { background: rgba(255,255,255,.9); }
+.fs-prog-rail:hover .fs-prog-thumb { opacity: 1; }
+.fs-prog-fill { height: 100%; background: #fafafa; border-radius: 2px; pointer-events: none; }
+.fs-prog-thumb { position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: #fafafa; transform: translate(-50%, -50%); opacity: 0; transition: opacity .1s; pointer-events: none; }
+
+.fs-btn-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.fs-ctrl { background: none; border: none; cursor: pointer; color: rgba(255,255,255,.4); display: flex; align-items: center; padding: 6px; border-radius: 4px; transition: all .1s; }
+.fs-ctrl:hover { color: #fafafa; background: rgba(255,255,255,.06); }
+.fs-ctrl.active { color: #fafafa; }
+.fs-play-btn { background: #fafafa; border: none; width: 40px; height: 40px; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .1s; flex-shrink: 0; }
+.fs-play-btn:hover { background: #e4e4e7; transform: scale(1.04); }
+.fs-play-btn:active { transform: scale(.97); }
+
+.fs-side-controls { display: flex; align-items: center; gap: 12px; }
+.fs-vol-wrap { display: flex; align-items: center; gap: 7px; }
+.fs-vol-range { -webkit-appearance: none; width: 80px; height: 3px; background: rgba(255,255,255,.15); border-radius: 2px; outline: none; cursor: pointer; }
+.fs-vol-range::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: #fafafa; border-radius: 50%; }
+
+.fs-close { position: absolute; top: 14px; right: 14px; z-index: 10; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,.5); transition: all .1s; }
+.fs-close:hover { color: #fafafa; background: rgba(255,255,255,.1); }
+
+.fs-eq { display: flex; align-items: flex-end; gap: 1.5px; height: 12px; }
+.fs-eq-b { width: 2.5px; background: #fafafa; border-radius: 1px; animation: eqa .6s ease-in-out infinite alternate; }
+.fs-eq-b:nth-child(2) { animation-delay: .15s; }
+.fs-eq-b:nth-child(3) { animation-delay: .3s; }
+
+@media (max-width: 800px) {
+  .fs-main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .fs-left { padding: 20px 20px 14px; flex-direction: row; gap: 14px; align-items: center; border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .fs-art, .fs-art-placeholder { width: 72px; height: 72px; }
+  .fs-art.playing { box-shadow: none; transform: none; }
+  .fs-meta { text-align: left; }
+  .fs-wave-container { display: none; }
+  .fs-track-title { font-size: 13px; }
+  .fs-controls { padding: 12px 16px 14px; }
+  .fs-btn-row { gap: 12px; }
+}
 `;
 
 /* ─── LOGO COMPONENT ────────────────────────────────────────────── */
@@ -434,10 +581,285 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
   );
 });
 
+/* ─── FULLSCREEN VIEW ───────────────────────────────────────────── */
+const FullscreenView = memo(({
+  current, queue, qIdx, playing, buffering, shuffle, repeat,
+  liked, volume, ytRef,
+  onClose, onTogglePlay, onAdvance, onSeek, onVolume, onLike,
+  onShuffle, onRepeat, onPlayFromQueue,
+  relatedTracks = [],
+}) => {
+  const [activeTab, setActiveTab] = useState("queue");
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const timerRef = useRef(null);
+  const isLiked = liked.some(t => t.id === current?.id);
+
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (playing) {
+      timerRef.current = setInterval(() => {
+        const t = ytRef.current?.getCurrentTime?.();
+        const d = ytRef.current?.getDuration?.();
+        if (t != null) setProgress(t);
+        if (d != null) setDuration(d);
+      }, 400);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [playing]);
+
+  useEffect(() => { setProgress(0); setDuration(current?.duration || 0); }, [current?.id]);
+
+  useEffect(() => {
+    const fn = e => {
+      if (e.key === "Escape" || e.code === "KeyF") onClose();
+    };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+
+  const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
+
+  const handleSeek = e => {
+    const p = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+    const t = p * (duration || 0);
+    setProgress(t);
+    onSeek(t);
+  };
+
+  // Seeded waveform heights per track
+  const waveHeights = useRef([]);
+  useEffect(() => {
+    const seed = current?.id || 12345;
+    const rng = n => { let x = Math.sin(n + seed * 0.0001) * 43758.5453; return x - Math.floor(x); };
+    waveHeights.current = Array.from({ length: 80 }, (_, i) => {
+      return Math.max(0.06, Math.min(1, rng(i) * 0.7 + Math.sin(i * 0.4) * 0.2 + Math.sin(i * 0.1) * 0.1));
+    });
+  }, [current?.id]);
+
+  const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
+
+  return (
+    <div className="fs-overlay" role="dialog" aria-modal="true">
+      {coverUrl && <div className="fs-bg" style={{ backgroundImage: `url(${coverUrl})` }} />}
+
+      <button className="fs-close" onClick={onClose} title="Close (Esc / F)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div className="fs-main">
+        {/* LEFT PANEL */}
+        <div className="fs-left">
+          <div className="fs-art-wrap">
+            {coverUrl
+              ? <img className={`fs-art${playing ? " playing" : ""}`} src={coverUrl} alt="" />
+              : <div className="fs-art-placeholder">
+                  <svg width="48" height="48" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                  </svg>
+                </div>}
+          </div>
+
+          <div className="fs-meta">
+            <div className="fs-track-title">{current?.title || "No track playing"}</div>
+            <div className="fs-track-artist">{current?.artist?.name || "—"}</div>
+            {current?.album?.title && (
+              <div className="fs-track-album">
+                {current.album.title}{current.album.release_date ? ` · ${current.album.release_date.slice(0, 4)}` : ""}
+              </div>
+            )}
+            <div className="fs-actions">
+              <button className={`fs-action-btn${isLiked ? " liked" : ""}`} onClick={() => current && onLike(current)} title="Save (L)">
+                <svg width="13" height="13" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+              {current?.link && (
+                <button className="fs-action-btn" title="Open on Deezer" onClick={() => window.open(current.link, "_blank")}>
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </button>
+              )}
+              <button className={`fs-action-btn${shuffle ? " active" : ""}`} onClick={onShuffle} title="Shuffle (S)">
+                <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 3h5v5l-1.5-1.5-4.538 4.538-1.414-1.414L17.5 5.5 16 4V3zM4 5l6.5 6.5-1.414 1.415L3 6.415 4 5zm10.5 9.5L9 10 7.5 11.5 13 17l1.5-1.5zm-4.538-4.538L3 17h2v1l6.5-6.5-1.538-1.538zM16 16l1.5-1.5 3.5 3.5V19h-5v-1l1.5-1.5L16 16z" />
+                </svg>
+              </button>
+              <button className={`fs-action-btn${repeat ? " active" : ""}`} onClick={onRepeat} title="Repeat">
+                <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Waveform scrubber */}
+          <div className="fs-wave-container" onClick={handleSeek}>
+            {waveHeights.current.map((h, i) => {
+              const barPct = (i / 80) * 100;
+              const state = barPct < pct ? "played" : barPct < pct + 1.5 ? "current" : "upcoming";
+              return <div key={i} className={`fs-wave-bar ${state}`} style={{ height: `${Math.max(4, h * 48)}px` }} />;
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="fs-right">
+          <div className="fs-tabs">
+            {[
+              { id: "queue", label: `Queue (${queue.length})` },
+              { id: "details", label: "Details" },
+              { id: "related", label: "Related" },
+            ].map(t => (
+              <div key={t.id} className={`fs-tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>
+                {t.label}
+              </div>
+            ))}
+          </div>
+
+          {activeTab === "queue" && (
+            <div className="fs-queue">
+              {queue.length === 0
+                ? <div style={{ padding: "40px 20px", textAlign: "center", color: "rgba(255,255,255,.25)", fontSize: 12, fontFamily: "'Geist Mono',monospace" }}>no tracks in queue</div>
+                : queue.map((t, i) => (
+                  <div key={`${t.id}-${i}`} className={`fs-queue-item${i === qIdx ? " current" : ""}`} onClick={() => onPlayFromQueue(t, i)}>
+                    <span className="fs-queue-num">
+                      {i === qIdx && playing
+                        ? <div className="fs-eq"><div className="fs-eq-b" /><div className="fs-eq-b" /><div className="fs-eq-b" /></div>
+                        : i + 1}
+                    </span>
+                    <img src={t.album?.cover_small || ""} alt="" />
+                    <div className="fs-queue-meta">
+                      <div className={`fs-queue-name${i === qIdx ? " active" : ""}`}>{t.title}</div>
+                      <div className="fs-queue-sub">{t.artist?.name}</div>
+                    </div>
+                    <span className="fs-queue-dur">{fmt(t.duration)}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {activeTab === "details" && (
+            <div className="fs-details">
+              {!current
+                ? <div style={{ color: "rgba(255,255,255,.25)", fontSize: 12, fontFamily: "'Geist Mono',monospace" }}>no track selected</div>
+                : <>
+                  {[
+                    { k: "Title", v: current.title },
+                    { k: "Artist", v: current.artist?.name },
+                    { k: "Album", v: current.album?.title },
+                    { k: "Year", v: current.album?.release_date?.slice(0, 4) || current.release_date?.slice(0, 4) },
+                    { k: "Duration", v: fmt(current.duration) },
+                    { k: "BPM", v: current.bpm ? `${current.bpm} bpm` : null },
+                    { k: "Gain", v: current.gain != null ? `${current.gain.toFixed(2)} dB` : null },
+                    { k: "Rank", v: current.rank ? `#${current.rank.toLocaleString()}` : null },
+                    { k: "Track ID", v: String(current.id) },
+                    { k: "Deezer", v: current.link ? "open ↗" : null, link: current.link },
+                  ].filter(r => r.v).map(row => (
+                    <div key={row.k} className="fs-detail-row">
+                      <div className="fs-detail-key">{row.k}</div>
+                      <div className="fs-detail-val">
+                        {row.link ? <a href={row.link} target="_blank" rel="noreferrer">{row.v}</a> : row.v}
+                      </div>
+                    </div>
+                  ))}
+                  {(current.explicit_lyrics === 1 || current.explicit_lyrics === true) && (
+                    <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(229,72,77,.12)", border: "1px solid rgba(229,72,77,.3)", borderRadius: 4, padding: "5px 10px" }}>
+                      <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, fontWeight: 700, color: "#e5484d", letterSpacing: ".08em" }}>E</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)", fontFamily: "'Geist Mono',monospace" }}>Explicit content</span>
+                    </div>
+                  )}
+                </>}
+            </div>
+          )}
+
+          {activeTab === "related" && (
+            <div className="fs-related">
+              {relatedTracks.length === 0
+                ? <div style={{ padding: "40px 20px", textAlign: "center", color: "rgba(255,255,255,.25)", fontSize: 12, fontFamily: "'Geist Mono',monospace" }}>play a track to see related</div>
+                : relatedTracks.map((t, i) => (
+                  <div key={t.id} className="fs-related-item" onClick={() => onPlayFromQueue(t, i)}>
+                    <img src={t.album?.cover_small || ""} alt="" />
+                    <div className="fs-related-meta">
+                      <div className="fs-related-name">{t.title}</div>
+                      <div className="fs-related-sub">{t.artist?.name} · {fmt(t.duration)}</div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* BOTTOM CONTROLS */}
+      <div className="fs-controls">
+        <div className="fs-prog-row">
+          <span className="fs-prog-time">{fmt(progress)}</span>
+          <div className="fs-prog-rail" onClick={handleSeek}>
+            <div className="fs-prog-fill" style={{ width: `${pct}%` }} />
+            <div className="fs-prog-thumb" style={{ left: `${pct}%` }} />
+          </div>
+          <span className="fs-prog-time" style={{ textAlign: "right" }}>{fmt(duration)}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="fs-side-controls">
+            <div className="fs-vol-wrap">
+              <svg width="12" height="12" fill="currentColor" style={{ color: "rgba(255,255,255,.3)", flexShrink: 0 }} viewBox="0 0 24 24">
+                {volume === 0
+                  ? <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                  : volume < 50
+                    ? <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z" />
+                    : <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />}
+              </svg>
+              <input type="range" min="0" max="100" value={volume} onChange={e => onVolume(Number(e.target.value))} className="fs-vol-range" />
+            </div>
+          </div>
+
+          <div className="fs-btn-row">
+            <button className={`fs-ctrl${shuffle ? " active" : ""}`} onClick={onShuffle} title="Shuffle (S)">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3h5v5l-1.5-1.5-4.538 4.538-1.414-1.414L17.5 5.5 16 4V3zM4 5l6.5 6.5-1.414 1.415L3 6.415 4 5zm10.5 9.5L9 10 7.5 11.5 13 17l1.5-1.5zm-4.538-4.538L3 17h2v1l6.5-6.5-1.538-1.538zM16 16l1.5-1.5 3.5 3.5V19h-5v-1l1.5-1.5L16 16z" /></svg>
+            </button>
+            <button className="fs-ctrl" onClick={() => onAdvance(-1)}>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg>
+            </button>
+            <button className="fs-play-btn" onClick={onTogglePlay}>
+              {buffering
+                ? <svg className="spin" width="14" height="14" fill="none" stroke="#09090b" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-6.219-8.56" /></svg>
+                : playing
+                  ? <svg width="14" height="14" fill="#09090b" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                  : <svg width="14" height="14" fill="#09090b" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>}
+            </button>
+            <button className="fs-ctrl" onClick={() => onAdvance(1)}>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm10-12v12h2V6h-2z" /></svg>
+            </button>
+            <button className={`fs-ctrl${repeat ? " active" : ""}`} onClick={onRepeat}>
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg>
+            </button>
+          </div>
+
+          <div className="fs-side-controls" style={{ justifyContent: "flex-end" }}>
+            {playing && !buffering && (
+              <div className="fs-eq"><div className="fs-eq-b" /><div className="fs-eq-b" /><div className="fs-eq-b" /></div>
+            )}
+            <button className="fs-action-btn" onClick={onClose} title="Exit fullscreen (F / Esc)" style={{ marginLeft: 8 }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 /* ─── PLAYER BAR ────────────────────────────────────────────────── */
-// Isolated so its 400ms progress timer never re-renders the track lists above
 const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, volume,
-  onTogglePlay, onAdvance, onSeek, onVolume, onLike, onShuffle, onRepeat, ytRef }) => {
+  onTogglePlay, onAdvance, onSeek, onVolume, onLike, onShuffle, onRepeat, onFullscreen, ytRef }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const timerRef = useRef(null);
@@ -450,22 +872,14 @@ const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, v
         const d = ytRef.current?.getDuration?.();
         if (t != null) setProgress(t);
         if (d != null && d !== duration) setDuration(d);
-        // Keep OS/device position in sync with actual playback
         if ("mediaSession" in navigator && t != null && d > 0) {
-          try {
-            navigator.mediaSession.setPositionState({
-              duration: d,
-              playbackRate: 1,
-              position: Math.min(t, d),
-            });
-          } catch {}
+          try { navigator.mediaSession.setPositionState({ duration: d, playbackRate: 1, position: Math.min(t, d) }); } catch {}
         }
       }, 400);
     }
     return () => clearInterval(timerRef.current);
   }, [playing]);
 
-  // Reset progress when track changes
   useEffect(() => { setProgress(0); setDuration(current?.duration || 0); }, [current?.id]);
 
   const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
@@ -532,8 +946,14 @@ const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, v
 
       <div className="pl-right">
         {playing && !buffering && (
-          <div className="eq" style={{ marginRight: 6 }}><div className="eq-b" /><div className="eq-b" /><div className="eq-b" /></div>
+          <div className="eq" style={{ marginRight: 4 }}><div className="eq-b" /><div className="eq-b" /><div className="eq-b" /></div>
         )}
+        {/* Fullscreen button */}
+        <button className="icon-btn" onClick={onFullscreen} title="Fullscreen (F)">
+          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+        </button>
         <div className="vol-wrap">
           <svg width="12" height="12" fill="currentColor" style={{ color: "var(--tx3)", flexShrink: 0 }} viewBox="0 0 24 24">
             {volume === 0
@@ -551,7 +971,6 @@ const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, v
 
 /* ─── MAIN APP ──────────────────────────────────────────────────── */
 export default function App() {
-  /* ── STATE ── */
   const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -573,21 +992,19 @@ export default function App() {
   const [shuffle, setShuffle] = useState(() => lsGet("shuffle", false));
   const [repeat, setRepeat] = useState(() => lsGet("repeat", false));
   const [loading, setLoading] = useState(false);
-  // UI state
   const [darkMode, setDarkMode] = useState(() => lsGet("darkMode", false));
   const [sidebarOpen, setSidebarOpen] = useState(() => lsGet("sidebarOpen", true));
   const [showQueue, setShowQueue] = useState(false);
   const [toasts, setToasts] = useState([]);
-  // Settings
   const [explicitFilter, setExplicitFilter] = useState(() => lsGet("explicitFilter", false));
   const [audioQuality, setAudioQuality] = useState(() => lsGet("audioQuality", "high"));
   const [crossfade, setCrossfade] = useState(() => lsGet("crossfade", false));
   const [showLyrics, setShowLyrics] = useState(() => lsGet("showLyrics", false));
   const [autoplay, setAutoplay] = useState(() => lsGet("autoplay", true));
+  // NEW: Fullscreen state
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
-  /* ── REFS ── */
   const ytRef = useRef(null);
-  const currentRef = useRef(null);
   const qRef = useRef([]), qIdxRef = useRef(0);
   const shuffleRef = useRef(shuffle), repeatRef = useRef(repeat), volRef = useRef(volume);
 
@@ -597,7 +1014,6 @@ export default function App() {
   useEffect(() => { repeatRef.current = repeat; }, [repeat]);
   useEffect(() => { volRef.current = volume; }, [volume]);
 
-  /* ── PERSIST TO LOCALSTORAGE ── */
   useEffect(() => { lsSet("liked", liked); }, [liked]);
   useEffect(() => { lsSet("recent", recent); }, [recent]);
   useEffect(() => { lsSet("volume", volume); }, [volume]);
@@ -611,14 +1027,10 @@ export default function App() {
   useEffect(() => { lsSet("showLyrics", showLyrics); }, [showLyrics]);
   useEffect(() => { lsSet("autoplay", autoplay); }, [autoplay]);
 
-  /* ── THEME ── */
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  /* ── KEEP DEEZER METADATA ON OS MEDIA CONTROLS ── */
-  // YouTube's embedded player periodically overwrites navigator.mediaSession.metadata
-  // with its own video info. This effect re-asserts Deezer track metadata every 3s while playing.
   useEffect(() => {
     if (!playing) return;
     const id = setInterval(() => {
@@ -628,12 +1040,10 @@ export default function App() {
     return () => clearInterval(id);
   }, [playing]);
 
-  /* ── BOOT ── */
   useEffect(() => {
     ensureYT(); whenYT(initYT); loadHome();
   }, []);
 
-  /* ── KEYBOARD SHORTCUTS ── */
   useEffect(() => {
     const handle = (e) => {
       const tag = document.activeElement?.tagName;
@@ -645,6 +1055,7 @@ export default function App() {
       if (e.code === "KeyS") setShuffle(s => !s);
       if (e.code === "KeyQ") setShowQueue(q => !q);
       if (e.code === "KeyB") setSidebarOpen(s => !s);
+      if (e.code === "KeyF") setFullscreenOpen(f => !f); // NEW
       if (e.code === "Comma") changeVol(Math.max(0, volRef.current - 10));
       if (e.code === "Period") changeVol(Math.min(100, volRef.current + 10));
     };
@@ -663,7 +1074,6 @@ export default function App() {
           const S = window.YT.PlayerState;
           if (e.data === S.PLAYING) {
             setPlaying(true); setBuffering(false);
-            // Re-assert Deezer metadata multiple times — YouTube overwrites mediaSession at varying delays after playback starts
             const cur = mediaSessionTrackRef.current || qRef.current[qIdxRef.current];
             if (cur) { [300, 600, 1000, 2000].forEach(ms => setTimeout(() => applyMediaMeta(cur), ms)); }
           }
@@ -688,13 +1098,13 @@ export default function App() {
   const applyMediaMeta = (track) => {
     if (!("mediaSession" in navigator) || !track) return;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title:  track.title       || "Unknown Title",
+      title: track.title || "Unknown Title",
       artist: track.artist?.name || "Unknown Artist",
-      album:  track.album?.title || "",
+      album: track.album?.title || "",
       artwork: [
-        { src: track.album?.cover_small  || "", sizes: "56x56",   type: "image/jpeg" },
+        { src: track.album?.cover_small || "", sizes: "56x56", type: "image/jpeg" },
         { src: track.album?.cover_medium || "", sizes: "250x250", type: "image/jpeg" },
-        { src: track.album?.cover_big    || track.album?.cover_xl || "", sizes: "500x500", type: "image/jpeg" },
+        { src: track.album?.cover_big || track.album?.cover_xl || "", sizes: "500x500", type: "image/jpeg" },
       ].filter(a => a.src),
     });
   };
@@ -703,14 +1113,18 @@ export default function App() {
     if (!("mediaSession" in navigator)) return;
     mediaSessionTrackRef.current = track;
     applyMediaMeta(track);
-    navigator.mediaSession.setActionHandler("play",         () => ytRef.current?.playVideo?.());
-    navigator.mediaSession.setActionHandler("pause",        () => ytRef.current?.pauseVideo?.());
-    navigator.mediaSession.setActionHandler("nexttrack",    () => advance(1));
-    navigator.mediaSession.setActionHandler("previoustrack",() => advance(-1));
-    navigator.mediaSession.setActionHandler("seekto",       e  => ytRef.current?.seekTo?.(e.seekTime, true));
+    navigator.mediaSession.setActionHandler("play", () => ytRef.current?.playVideo?.());
+    navigator.mediaSession.setActionHandler("pause", () => ytRef.current?.pauseVideo?.());
+    navigator.mediaSession.setActionHandler("nexttrack", () => advance(1));
+    navigator.mediaSession.setActionHandler("previoustrack", () => advance(-1));
+    navigator.mediaSession.setActionHandler("seekto", e => ytRef.current?.seekTo?.(e.seekTime, true));
   };
 
-  const advance = (dir = 1) => { const q = qRef.current; if (!q.length) return; const n = shuffleRef.current ? Math.floor(Math.random() * q.length) : (qIdxRef.current + dir + q.length) % q.length; qIdxRef.current = n; setQIdx(n); doPlay(q[n], q, n); };
+  const advance = (dir = 1) => {
+    const q = qRef.current; if (!q.length) return;
+    const n = shuffleRef.current ? Math.floor(Math.random() * q.length) : (qIdxRef.current + dir + q.length) % q.length;
+    qIdxRef.current = n; setQIdx(n); doPlay(q[n], q, n);
+  };
 
   const doPlay = async (track, list = [], idx = 0) => {
     setCurrent(track); setPlaying(false); setBuffering(true);
@@ -735,14 +1149,12 @@ export default function App() {
     });
   }, []);
 
-  /* ── TOAST ── */
-  const toast = useCallback((msg, type = "default") => {
+  const toast = useCallback((msg) => {
     const id = Date.now();
-    setToasts(t => [...t, { id, msg, type }]);
+    setToasts(t => [...t, { id, msg }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 2800);
   }, []);
 
-  /* ── DATA ── */
   const loadHome = async () => {
     setLoading(true);
     try {
@@ -775,18 +1187,11 @@ export default function App() {
   const openArtist = async a => { setView("artist"); setLoading(true); const [i, t, alb] = await Promise.all([dz(`/artist/${a.id}`), dz(`/artist/${a.id}/top?limit=10`), dz(`/artist/${a.id}/albums?limit=10`)]); setArtist({ info: i, top: t.data || [], albums: alb.data || [] }); setLoading(false); };
   const openGenre = async g => { setSelGenre(g); setView("genre"); setLoading(true); const d = await dz(`/chart/${g.id}/tracks?limit=20`); setGenTracks(d.data || []); setLoading(false); };
 
-  // Shared props for TTable — avoids repeating on every call
-  const tp = {
-    explicitFilter,
-    currentId: current?.id,
-    playing,
-    buffering,
-    liked,
-    onPlay: doPlay,
-    onLike: toggleLike,
-  };
+  const tp = { explicitFilter, currentId: current?.id, playing, buffering, liked, onPlay: doPlay, onLike: toggleLike };
 
-  /* ─── RENDER ─────────────────────────────────────────────────── */
+  // Related tracks = current queue or search results or charts
+  const relatedTracks = (results?.tracks || charts).filter(t => t.id !== current?.id).slice(0, 30);
+
   return (
     <>
       <style>{GLOBAL_CSS}</style>
@@ -794,10 +1199,34 @@ export default function App() {
 
       {/* TOASTS */}
       <div className="toast-area">
-        {toasts.map(t => (
-          <div key={t.id} className="toast">{t.msg}</div>
-        ))}
+        {toasts.map(t => <div key={t.id} className="toast">{t.msg}</div>)}
       </div>
+
+      {/* FULLSCREEN */}
+      {fullscreenOpen && (
+        <FullscreenView
+          current={current}
+          queue={queue}
+          qIdx={qIdx}
+          playing={playing}
+          buffering={buffering}
+          shuffle={shuffle}
+          repeat={repeat}
+          liked={liked}
+          volume={volume}
+          ytRef={ytRef}
+          relatedTracks={relatedTracks}
+          onClose={() => setFullscreenOpen(false)}
+          onTogglePlay={togglePlay}
+          onAdvance={advance}
+          onSeek={handleSeek}
+          onVolume={changeVol}
+          onLike={toggleLike}
+          onShuffle={() => { setShuffle(s => { toast(!s ? "Shuffle on" : "Shuffle off"); return !s; }); }}
+          onRepeat={() => { setRepeat(r => { toast(!r ? "Repeat on" : "Repeat off"); return !r; }); }}
+          onPlayFromQueue={(t, i) => { qIdxRef.current = i; setQIdx(i); doPlay(t, queue, i); }}
+        />
+      )}
 
       {/* QUEUE PANEL */}
       {showQueue && (
@@ -829,8 +1258,7 @@ export default function App() {
       )}
 
       <div className={`shell${sidebarOpen ? "" : " nav-collapsed"}`}>
-
-        {/* ─── SIDEBAR ─── */}
+        {/* SIDEBAR */}
         <nav className="nav">
           <div className="nav-inner">
             <div className="nav-header">
@@ -868,7 +1296,6 @@ export default function App() {
                   ))}
               </div>
             </div>
-            {/* Now playing mini in sidebar */}
             {current && (
               <div className="nav-now-playing">
                 <div className="nav-now-label">Now Playing</div>
@@ -884,9 +1311,8 @@ export default function App() {
           </div>
         </nav>
 
-        {/* ─── MAIN ─── */}
+        {/* MAIN */}
         <main className="main">
-          {/* TOPBAR */}
           <div className="topbar">
             <div className="topbar-left">
               <button className="icon-btn" onClick={() => setSidebarOpen(s => !s)} title="Toggle sidebar (B)">
@@ -917,14 +1343,12 @@ export default function App() {
 
           {loading && <div className="ld"><svg className="spin" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-6.219-8.56" /></svg>fetching data…</div>}
 
-          {/* ── HOME ── */}
           {!loading && view === "home" && (
             <div>
               <div className="ph">
                 <div className="pt">Overview</div>
                 <div className="ps">wave · deezer api · {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</div>
               </div>
-
               {recent.length > 0 && (
                 <div className="sec">
                   <div className="sec-hd"><span className="sec-lbl">Recently Played</span></div>
@@ -932,21 +1356,16 @@ export default function App() {
                     {recent.map(t => (
                       <div key={t.id} className="recent-item" onClick={() => doPlay(t)}>
                         <img src={t.album?.cover_medium || t.album?.cover_small || ""} alt="" />
-                        <div>
-                          <div className="recent-item-name">{t.title}</div>
-                          <div className="recent-item-sub">{t.artist?.name}</div>
-                        </div>
+                        <div><div className="recent-item-name">{t.title}</div><div className="recent-item-sub">{t.artist?.name}</div></div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">Top Charts</span><span className="sec-act" onClick={() => setView("browse")}>browse →</span></div>
                 <TTable tracks={charts.slice(0, 10)} {...tp} />
               </div>
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">Genres</span></div>
                 <div className="ggrid">
@@ -958,7 +1377,6 @@ export default function App() {
                   ))}
                 </div>
               </div>
-
               {featured.length > 0 && (
                 <div className="sec">
                   <div className="sec-hd"><span className="sec-lbl">Featured Albums</span></div>
@@ -968,7 +1386,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── SEARCH ── */}
           {!loading && view === "search" && results && (
             <div>
               <div className="ph"><div className="pt">Search Results</div><div className="ps">"{query}" · {(results.tracks?.length || 0) + (results.artists?.length || 0) + (results.albums?.length || 0)} results</div></div>
@@ -979,7 +1396,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── LIKED ── */}
           {!loading && view === "liked" && (
             <div>
               <div className="ph"><div className="pt">Saved Tracks</div><div className="ps">{liked.length} tracks saved</div></div>
@@ -987,7 +1403,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── BROWSE ── */}
           {!loading && view === "browse" && (
             <div>
               <div className="ph"><div className="pt">Browse</div><div className="ps">genres & moods</div></div>
@@ -997,7 +1412,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── GENRE ── */}
           {!loading && view === "genre" && selGenre && (
             <div>
               <div className="ph" style={{ display: "flex", alignItems: "flex-start", flexDirection: "column", gap: 8 }}>
@@ -1009,7 +1423,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── PLAYLIST ── */}
           {!loading && view === "playlist" && selPl && (
             <div>
               <div className="ehero">
@@ -1031,7 +1444,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── ALBUM ── */}
           {!loading && view === "album" && selAlb && (
             <div>
               <div className="ehero">
@@ -1054,7 +1466,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ── ARTIST ── */}
           {!loading && view === "artist" && artist && (
             <div>
               <div className="ehero">
@@ -1080,11 +1491,9 @@ export default function App() {
             </div>
           )}
 
-          {/* ── SETTINGS ── */}
           {!loading && view === "settings" && (
             <div>
               <div className="ph"><div className="pt">Settings</div><div className="ps">preferences & configuration</div></div>
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">Playback</span></div>
                 <div className="settings-grid">
@@ -1122,7 +1531,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">Appearance</span></div>
                 <div className="settings-grid">
@@ -1144,7 +1552,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">Keyboard Shortcuts</span></div>
                 <div className="setting-card" style={{ borderRight: "none" }}>
@@ -1156,12 +1563,12 @@ export default function App() {
                     <span className="kbd">S</span><span className="kbd-desc">Toggle shuffle</span>
                     <span className="kbd">Q</span><span className="kbd-desc">Show / hide queue</span>
                     <span className="kbd">B</span><span className="kbd-desc">Toggle sidebar</span>
+                    <span className="kbd">F</span><span className="kbd-desc">Toggle fullscreen</span>
                     <span className="kbd">,</span><span className="kbd-desc">Volume down</span>
                     <span className="kbd">.</span><span className="kbd-desc">Volume up</span>
                   </div>
                 </div>
               </div>
-
               <div className="sec">
                 <div className="sec-hd"><span className="sec-lbl">About</span></div>
                 <div className="setting-card">
@@ -1169,7 +1576,7 @@ export default function App() {
                     <WaveLogo size={22} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-.02em" }}>WAVE</div>
-                      <div className="about-version">v1.0.0 · built with Deezer API + YouTube IFrame API</div>
+                      <div className="about-version">v1.1.0 · built with Deezer API + YouTube IFrame API</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 12, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace", lineHeight: 1.6 }}>
@@ -1187,7 +1594,7 @@ export default function App() {
           )}
         </main>
 
-        {/* ─── PLAYER BAR ─── */}
+        {/* PLAYER BAR */}
         <PlayerBar
           current={current}
           playing={playing}
@@ -1204,6 +1611,7 @@ export default function App() {
           onLike={toggleLike}
           onShuffle={() => { setShuffle(s => { toast(!s ? "Shuffle on" : "Shuffle off"); return !s; }); }}
           onRepeat={() => { setRepeat(r => { toast(!r ? "Repeat on" : "Repeat off"); return !r; }); }}
+          onFullscreen={() => setFullscreenOpen(true)}
         />
       </div>
     </>
