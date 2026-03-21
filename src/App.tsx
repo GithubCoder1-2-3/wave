@@ -532,16 +532,19 @@ button, input, select { transition: var(--trans); }
 .cmd-empty { padding: 32px 16px; text-align: center; color: var(--tx3); font-size: 12px; font-family: 'Geist Mono', monospace; }
 
 /* ── LYRICS OVERLAY ── */
-.lyrics-panel { position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.82); backdrop-filter: blur(24px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; animation: fadeIn .2s ease; }
-.lyrics-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,.6); transition: all .1s; }
+.lyrics-panel { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; animation: fadeIn .2s ease; overflow: hidden; }
+.lyrics-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) saturate(1.6); opacity: .35; pointer-events: none; }
+.lyrics-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.7); pointer-events: none; }
+.lyrics-close { position: absolute; top: 16px; right: 16px; z-index: 2; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,.6); transition: all .1s; }
 .lyrics-close:hover { color: #fafafa; background: rgba(255,255,255,.14); }
-.lyrics-track { font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 24px; }
-.lyrics-body { max-width: 600px; width: 100%; max-height: 70vh; overflow-y: auto; text-align: center; }
-.lyrics-body::-webkit-scrollbar { width: 0; }
-.lyrics-line { font-size: clamp(16px, 2.2vw, 22px); font-weight: 600; letter-spacing: -.02em; color: rgba(255,255,255,.85); line-height: 1.9; cursor: default; transition: color .2s; }
-.lyrics-line:hover { color: #fafafa; }
-.lyrics-line.empty { height: 1.2em; }
-.lyrics-loading { color: rgba(255,255,255,.3); font-family: 'Geist Mono', monospace; font-size: 12px; }
+.lyrics-track { position: relative; z-index: 2; font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 24px; }
+.lyrics-body { position: relative; z-index: 2; max-width: 620px; width: 100%; height: 60vh; overflow: hidden; mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); }
+.lyrics-scroll { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 30vh 0; transition: transform .4s cubic-bezier(.4,0,.2,1); }
+.lyrics-line { font-size: clamp(18px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.02em; color: rgba(255,255,255,.25); line-height: 1.6; text-align: center; transition: color .3s, transform .3s, opacity .3s; cursor: default; padding: 0 16px; }
+.lyrics-line.active { color: #fafafa; transform: scale(1.06); }
+.lyrics-line.near { color: rgba(255,255,255,.55); }
+.lyrics-line.empty { height: 1em; }
+.lyrics-loading { position: relative; z-index: 2; color: rgba(255,255,255,.3); font-family: 'Geist Mono', monospace; font-size: 12px; }
 
 /* ── SLEEP TIMER ── */
 .sleep-btn { position: relative; }
@@ -651,42 +654,98 @@ const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, o
 });
 
 /* ─── LYRICS OVERLAY ────────────────────────────────────────────── */
-const LyricsOverlay = memo(({ current, onClose }) => {
-  const [lines, setLines] = useState(null);
+const LyricsOverlay = memo(({ current, playing, ytRef, onClose }) => {
+  const [synced, setSynced] = useState(null); // [{time, text}]
+  const [plain, setPlain] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const scrollRef = useRef(null);
+  const rafRef = useRef(null);
+  const lineRefs = useRef([]);
 
+  // Fetch lyrics
   useEffect(() => {
     if (!current) return;
-    setLoading(true); setLines(null);
-    const q = encodeURIComponent(`${current.title} ${current.artist?.name}`);
+    setLoading(true); setSynced(null); setPlain(null); setActiveIdx(0);
     fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(current.artist?.name || "")}&track_name=${encodeURIComponent(current.title || "")}&duration=${current.duration || 0}`)
       .then(r => r.json())
       .then(d => {
-        const text = d.plainLyrics || d.syncedLyrics?.replace(/\[\d+:\d+\.\d+\]/g, "").trim();
-        if (text) setLines(text.split("\n"));
-        else setLines(null);
+        if (d.syncedLyrics) {
+          const parsed = d.syncedLyrics.split("\n").map(l => {
+            const m = l.match(/^\[(\d+):(\d+\.\d+)\](.*)/);
+            if (!m) return null;
+            return { time: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3].trim() };
+          }).filter(Boolean);
+          setSynced(parsed);
+        } else if (d.plainLyrics) {
+          setPlain(d.plainLyrics.split("\n"));
+        } else { setSynced(null); setPlain(null); }
       })
-      .catch(() => setLines(null))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [current?.id]);
+
+  // Karaoke sync loop
+  useEffect(() => {
+    if (!synced) return;
+    cancelAnimationFrame(rafRef.current);
+    const tick = () => {
+      const t = ytRef.current?.getCurrentTime?.() || 0;
+      let idx = 0;
+      for (let i = 0; i < synced.length; i++) {
+        if (synced[i].time <= t) idx = i;
+        else break;
+      }
+      setActiveIdx(idx);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [synced]);
+
+  // Auto-scroll active line to center
+  useEffect(() => {
+    const el = lineRefs.current[activeIdx];
+    if (!el || !scrollRef.current) return;
+    const offset = el.offsetTop - scrollRef.current.clientHeight / 2 + el.clientHeight / 2;
+    scrollRef.current.style.transform = `translateY(${-offset}px)`;
+  }, [activeIdx]);
 
   useEffect(() => {
     const fn = e => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
+    return () => { window.removeEventListener("keydown", fn); cancelAnimationFrame(rafRef.current); };
   }, [onClose]);
+
+  const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
 
   return (
     <div className="lyrics-panel">
+      {coverUrl && <div className="lyrics-bg" style={{ backgroundImage: `url(${coverUrl})` }} />}
+      <div className="lyrics-scrim" />
       <button className="lyrics-close" onClick={onClose}>
         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
       <div className="lyrics-track">{current?.title} · {current?.artist?.name}</div>
       <div className="lyrics-body">
-        {loading && <div className="lyrics-loading">fetching lyrics…</div>}
-        {!loading && !lines && <div className="lyrics-loading">no lyrics found for this track</div>}
-        {lines && lines.map((l, i) =>
-          l.trim() ? <div key={i} className="lyrics-line">{l}</div> : <div key={i} className="lyrics-line empty" />
+        {loading && <div className="lyrics-loading" style={{ paddingTop: "30vh" }}>fetching lyrics…</div>}
+        {!loading && !synced && !plain && <div className="lyrics-loading" style={{ paddingTop: "30vh" }}>no lyrics found</div>}
+        {!loading && synced && (
+          <div className="lyrics-scroll" ref={scrollRef}>
+            {synced.map((l, i) => (
+              <div key={i} ref={el => lineRefs.current[i] = el}
+                className={`lyrics-line${i === activeIdx ? " active" : i === activeIdx - 1 || i === activeIdx + 1 ? " near" : ""}`}>
+                {l.text || <span>&nbsp;</span>}
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && plain && !synced && (
+          <div className="lyrics-scroll" ref={scrollRef}>
+            {plain.map((l, i) => (
+              <div key={i} className={`lyrics-line${l.trim() ? "" : " empty"}`}>{l || <span>&nbsp;</span>}</div>
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -1550,7 +1609,7 @@ export default function App() {
       )}
 
       {/* LYRICS */}
-      {lyricsOpen && <LyricsOverlay current={current} onClose={() => setLyricsOpen(false)} />}
+      {lyricsOpen && <LyricsOverlay current={current} playing={playing} ytRef={ytRef} onClose={() => setLyricsOpen(false)} />}
 
       {/* FULLSCREEN */}
       {fullscreenOpen && (
@@ -1689,7 +1748,7 @@ export default function App() {
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
               </button>
               <button className="icon-btn sleep-btn" title="Sleep timer" onClick={handleSleep}>
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
                 {sleepMins && <span className="sleep-badge">{sleepMins}</span>}
               </button>
               <button className="icon-btn" title="Queue (Q)" onClick={() => setShowQueue(q => !q)}>
