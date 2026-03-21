@@ -87,7 +87,7 @@ button, input, select { transition: var(--trans); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-.shell { display: grid; grid-template-columns: var(--nav-w, 220px) 1fr; grid-template-rows: 1fr 82px; height: 100vh; transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
+.shell { display: grid; grid-template-columns: var(--nav-w, 220px) 1fr; grid-template-rows: 1fr 82px 0px; height: 100vh; transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
 .shell.nav-collapsed { --nav-w: 0px; }
 
 .nav { grid-row: 1/2; background: var(--bg); border-right: var(--line); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
@@ -531,20 +531,23 @@ button, input, select { transition: var(--trans); }
 .cmd-item-kbd { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx3); flex-shrink: 0; }
 .cmd-empty { padding: 32px 16px; text-align: center; color: var(--tx3); font-size: 12px; font-family: 'Geist Mono', monospace; }
 
-/* ── LYRICS OVERLAY ── */
-.lyrics-panel { position: fixed; inset: 0; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; animation: fadeIn .2s ease; overflow: hidden; }
-.lyrics-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) saturate(1.6); opacity: .35; pointer-events: none; }
-.lyrics-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.7); pointer-events: none; }
-.lyrics-close { position: absolute; top: 16px; right: 16px; z-index: 2; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255,255,255,.6); transition: all .1s; }
-.lyrics-close:hover { color: #fafafa; background: rgba(255,255,255,.14); }
-.lyrics-track { position: relative; z-index: 2; font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 24px; }
-.lyrics-body { position: relative; z-index: 2; max-width: 620px; width: 100%; height: 60vh; overflow: hidden; mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); }
-.lyrics-scroll { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 30vh 0; transition: transform .4s cubic-bezier(.4,0,.2,1); }
-.lyrics-line { font-size: clamp(18px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.02em; color: rgba(255,255,255,.25); line-height: 1.6; text-align: center; transition: color .3s, transform .3s, opacity .3s; cursor: default; padding: 0 16px; }
-.lyrics-line.active { color: #fafafa; transform: scale(1.06); }
-.lyrics-line.near { color: rgba(255,255,255,.55); }
-.lyrics-line.empty { height: 1em; }
-.lyrics-loading { position: relative; z-index: 2; color: rgba(255,255,255,.3); font-family: 'Geist Mono', monospace; font-size: 12px; }
+/* ── LYRICS PAGE ── */
+.lyrics-page { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: #09090b; }
+.lyrics-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(70px) saturate(1.6); opacity: .25; pointer-events: none; }
+.lyrics-scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,.8)); pointer-events: none; }
+.lyrics-header { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.07); flex-shrink: 0; }
+.lyrics-header-art { width: 36px; height: 36px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,.12); flex-shrink: 0; }
+.lyrics-header-title { font-size: 13px; font-weight: 600; color: #fafafa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lyrics-header-artist { font-size: 11px; color: rgba(255,255,255,.4); font-family: 'Geist Mono', monospace; }
+.lyrics-header-meta { overflow: hidden; flex: 1; }
+.lyrics-body { position: relative; z-index: 2; flex: 1; overflow: hidden; mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%); }
+.lyrics-scroll { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 45vh 24px; transition: transform .45s cubic-bezier(.4,0,.2,1); will-change: transform; }
+.lyrics-line { font-size: clamp(20px, 2.8vw, 32px); font-weight: 700; letter-spacing: -.025em; color: rgba(255,255,255,.2); line-height: 1.55; text-align: center; transition: color .35s, transform .35s; cursor: default; padding: 2px 0; }
+.lyrics-line.active { color: #ffffff; transform: scale(1.05); }
+.lyrics-line.near { color: rgba(255,255,255,.5); }
+.lyrics-line.empty { height: .8em; }
+.lyrics-idle { position: relative; z-index: 2; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: rgba(255,255,255,.25); font-family: 'Geist Mono', monospace; font-size: 12px; }
+.lyrics-loading { position: relative; z-index: 2; flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.25); font-family: 'Geist Mono', monospace; font-size: 12px; }
 
 /* ── SLEEP TIMER ── */
 .sleep-btn { position: relative; }
@@ -567,7 +570,88 @@ button, input, select { transition: var(--trans); }
 
 /* ── ACCENT TINT ── */
 .accent-tint { transition: --accent-tint .6s; }
+
+/* ── MOBILE ── */
+@media (max-width: 680px) {
+  .shell { grid-template-columns: 1fr; grid-template-rows: 1fr 64px 52px; }
+  .shell.nav-collapsed { grid-template-columns: 1fr; }
+  .nav { display: none; }
+  .sidebar-toggle-btn { display: none; }
+  .player { grid-column: 1/2; grid-template-columns: 1fr auto; border-top: 2px solid var(--tx); }
+  .pl-right { display: none; }
+  .pl-center { padding: 0 10px; }
+  .prog-row { display: none; }
+  .pl-btns { gap: 8px; }
+  .topbar { padding: 0 10px; gap: 6px; }
+  .srch-form { max-width: none; }
+  .topbar-right { gap: 3px; }
+  .chip { display: none; }
+  .icon-btn { width: 26px; height: 26px; }
+  .cgrid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .ehero { grid-template-columns: 100px 1fr; }
+  .ehero-img { width: 80px; height: 80px; }
+  .entity-name { font-size: 18px; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .ph { padding: 14px 14px 12px; }
+  .pt { font-size: 17px; }
+  .ttbl th:nth-child(3), .ttbl td:nth-child(3) { display: none; }
+
+  /* Mobile bottom nav */
+  .mobile-nav { display: flex !important; }
+}
+.mobile-nav {
+  display: none;
+  grid-column: 1/3;
+  background: var(--surface);
+  border-top: var(--line);
+  align-items: stretch;
+}
+.mobile-nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; cursor: pointer; color: var(--tx3); transition: color .1s; padding: 6px 0;
+  font-family: 'Geist Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; border: none; background: none;
+}
+.mobile-nav-item.active { color: var(--tx); }
+.mobile-nav-item svg { flex-shrink: 0; }
+
+/* Mobile player strip — compact single row */
+@media (max-width: 680px) {
+  .player { min-height: 64px; }
+  .pl-track { padding: 0 10px; gap: 8px; }
+  .pl-thumb { width: 36px; height: 36px; }
+  .pl-title { font-size: 12px; }
+  .pl-artist { font-size: 10px; }
+  .ctrl-btn { padding: 3px; }
+  .play-main-btn { width: 26px; height: 26px; }
+}
 `;
+
+/* ─── HASH ROUTER ───────────────────────────────────────────────── */
+const SIMPLE_VIEWS = ["home", "browse", "liked", "settings", "stats", "lyrics"];
+function getHashView() {
+  const h = window.location.hash.slice(1) || "home";
+  return SIMPLE_VIEWS.includes(h) ? h : "home";
+}
+function useHashView() {
+  const [view, setViewState] = useState(getHashView);
+  const setView = useCallback((v) => {
+    window.location.hash = v;
+  }, []);
+  useEffect(() => {
+    const onPop = () => setViewState(getHashView());
+    window.addEventListener("popstate", onPop);
+    // Also handle hash changes from direct URL edits
+    window.addEventListener("hashchange", onPop);
+    return () => { window.removeEventListener("popstate", onPop); window.removeEventListener("hashchange", onPop); };
+  }, []);
+  // Keep state in sync when hash changes externally
+  useEffect(() => {
+    const v = getHashView();
+    if (v !== view) setViewState(v);
+  });
+  return [view, setView];
+}
 
 /* ─── COMMAND PALETTE ───────────────────────────────────────────── */
 const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, onPlay, onNav, onAction }) => {
@@ -653,101 +737,127 @@ const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, o
   );
 });
 
-/* ─── LYRICS OVERLAY ────────────────────────────────────────────── */
-const LyricsOverlay = memo(({ current, playing, ytRef, onClose }) => {
-  const [synced, setSynced] = useState(null); // [{time, text}]
+/* ─── LYRICS PAGE ───────────────────────────────────────────────── */
+const LyricsPage = memo(({ current, ytRef }) => {
+  const [synced, setSynced] = useState(null);
   const [plain, setPlain] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const scrollRef = useRef(null);
-  const rafRef = useRef(null);
   const lineRefs = useRef([]);
+  const rafRef = useRef(null);
+  const prevIdRef = useRef(null);
 
-  // Fetch lyrics
   useEffect(() => {
-    if (!current) return;
+    if (!current || current.id === prevIdRef.current) return;
+    prevIdRef.current = current.id;
     setLoading(true); setSynced(null); setPlain(null); setActiveIdx(0);
     fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(current.artist?.name || "")}&track_name=${encodeURIComponent(current.title || "")}&duration=${current.duration || 0}`)
       .then(r => r.json())
       .then(d => {
         if (d.syncedLyrics) {
-          const parsed = d.syncedLyrics.split("\n").map(l => {
+          const parsed = d.syncedLyrics.split("\n").flatMap(l => {
             const m = l.match(/^\[(\d+):(\d+\.\d+)\](.*)/);
-            if (!m) return null;
-            return { time: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3].trim() };
-          }).filter(Boolean);
+            return m ? [{ time: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3].trim() }] : [];
+          });
           setSynced(parsed);
         } else if (d.plainLyrics) {
           setPlain(d.plainLyrics.split("\n"));
-        } else { setSynced(null); setPlain(null); }
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [current?.id]);
 
-  // Karaoke sync loop
+  // Karaoke RAF — only runs when synced lyrics exist
   useEffect(() => {
-    if (!synced) return;
     cancelAnimationFrame(rafRef.current);
+    if (!synced) return;
     const tick = () => {
       const t = ytRef.current?.getCurrentTime?.() || 0;
       let idx = 0;
       for (let i = 0; i < synced.length; i++) {
-        if (synced[i].time <= t) idx = i;
-        else break;
+        if (synced[i].time <= t) idx = i; else break;
       }
-      setActiveIdx(idx);
+      setActiveIdx(prev => prev === idx ? prev : idx);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
   }, [synced]);
 
-  // Auto-scroll active line to center
+  // Scroll active line to center — purely via transform, no layout
   useEffect(() => {
     const el = lineRefs.current[activeIdx];
-    if (!el || !scrollRef.current) return;
-    const offset = el.offsetTop - scrollRef.current.clientHeight / 2 + el.clientHeight / 2;
-    scrollRef.current.style.transform = `translateY(${-offset}px)`;
+    const container = scrollRef.current;
+    if (!el || !container) return;
+    const containerH = container.parentElement?.clientHeight || 400;
+    const offset = el.offsetTop - containerH / 2 + el.clientHeight / 2;
+    container.style.transform = `translateY(${-offset}px)`;
   }, [activeIdx]);
-
-  useEffect(() => {
-    const fn = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", fn);
-    return () => { window.removeEventListener("keydown", fn); cancelAnimationFrame(rafRef.current); };
-  }, [onClose]);
 
   const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
 
   return (
-    <div className="lyrics-panel">
+    <div className="lyrics-page">
       {coverUrl && <div className="lyrics-bg" style={{ backgroundImage: `url(${coverUrl})` }} />}
       <div className="lyrics-scrim" />
-      <button className="lyrics-close" onClick={onClose}>
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
-      </button>
-      <div className="lyrics-track">{current?.title} · {current?.artist?.name}</div>
-      <div className="lyrics-body">
-        {loading && <div className="lyrics-loading" style={{ paddingTop: "30vh" }}>fetching lyrics…</div>}
-        {!loading && !synced && !plain && <div className="lyrics-loading" style={{ paddingTop: "30vh" }}>no lyrics found</div>}
-        {!loading && synced && (
+
+      {/* Header */}
+      {current && (
+        <div className="lyrics-header">
+          {current.album?.cover_small && <img className="lyrics-header-art" src={current.album.cover_small} alt="" />}
+          <div className="lyrics-header-meta">
+            <div className="lyrics-header-title">{current.title}</div>
+            <div className="lyrics-header-artist">{current.artist?.name}</div>
+          </div>
+          {synced && <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, color: "rgba(255,255,255,.3)", flexShrink: 0 }}>● synced</span>}
+        </div>
+      )}
+
+      {/* No track */}
+      {!current && (
+        <div className="lyrics-idle">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+          <span>play a track to see lyrics</span>
+        </div>
+      )}
+
+      {/* Loading */}
+      {current && loading && <div className="lyrics-loading">fetching lyrics…</div>}
+
+      {/* No lyrics found */}
+      {current && !loading && !synced && !plain && (
+        <div className="lyrics-idle"><span>no lyrics found for this track</span></div>
+      )}
+
+      {/* Synced karaoke */}
+      {current && synced && (
+        <div className="lyrics-body">
           <div className="lyrics-scroll" ref={scrollRef}>
             {synced.map((l, i) => (
-              <div key={i} ref={el => lineRefs.current[i] = el}
-                className={`lyrics-line${i === activeIdx ? " active" : i === activeIdx - 1 || i === activeIdx + 1 ? " near" : ""}`}>
+              <div
+                key={i}
+                ref={el => { lineRefs.current[i] = el; }}
+                className={`lyrics-line${i === activeIdx ? " active" : Math.abs(i - activeIdx) === 1 ? " near" : ""}`}
+              >
                 {l.text || <span>&nbsp;</span>}
               </div>
             ))}
           </div>
-        )}
-        {!loading && plain && !synced && (
+        </div>
+      )}
+
+      {/* Plain fallback */}
+      {current && !synced && plain && (
+        <div className="lyrics-body">
           <div className="lyrics-scroll" ref={scrollRef}>
             {plain.map((l, i) => (
-              <div key={i} className={`lyrics-line${l.trim() ? "" : " empty"}`}>{l || <span>&nbsp;</span>}</div>
+              <div key={i} className={`lyrics-line${!l.trim() ? " empty" : ""}`}>{l || <span>&nbsp;</span>}</div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -1309,7 +1419,7 @@ const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, v
 
 /* ─── MAIN APP ──────────────────────────────────────────────────── */
 export default function App() {
-  const [view, setView] = useState("home");
+  const [view, setView] = useHashView();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [current, setCurrent] = useState(null);
@@ -1603,14 +1713,12 @@ export default function App() {
             if (a === "shuffle") setShuffle(s => !s);
             if (a === "darkmode") setDarkMode(d => !d);
             if (a === "sleep") handleSleep();
-            if (a === "lyrics") setLyricsOpen(l => !l);
+            if (a === "lyrics") { setView("lyrics"); }
           }}
         />
       )}
 
       {/* LYRICS */}
-      {lyricsOpen && <LyricsOverlay current={current} playing={playing} ytRef={ytRef} onClose={() => setLyricsOpen(false)} />}
-
       {/* FULLSCREEN */}
       {fullscreenOpen && (
         <FullscreenView
@@ -1684,6 +1792,7 @@ export default function App() {
                   { v: "browse", label: "Browse", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg> },
                   { v: "liked", label: "Saved", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg> },
                   { v: "stats", label: "Stats", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" /></svg> },
+                  { v: "lyrics", label: "Lyrics", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg> },
                   { v: "settings", label: "Settings", ico: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> },
                 ].map(n => (
                   <div key={n.v} className={`nav-item${view === n.v ? " active" : ""}`} onClick={() => setView(n.v)}>
@@ -1725,7 +1834,7 @@ export default function App() {
         <main className="main">
           <div className="topbar">
             <div className="topbar-left">
-              <button className="icon-btn" onClick={() => setSidebarOpen(s => !s)} title="Toggle sidebar (B)">
+              <button className="icon-btn sidebar-toggle-btn" onClick={() => setSidebarOpen(s => !s)} title="Toggle sidebar (B)">
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>
               </button>
               <button className="icon-btn" onClick={() => setView("home")}>
@@ -1744,7 +1853,7 @@ export default function App() {
               <button className="icon-btn" title="Command palette (⌘K)" onClick={() => setCmdOpen(c => !c)}>
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></svg>
               </button>
-              <button className="icon-btn" title="Lyrics" onClick={() => setLyricsOpen(l => !l)}>
+              <button className="icon-btn" title="Lyrics" onClick={() => setView("lyrics")}>
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
               </button>
               <button className="icon-btn sleep-btn" title="Sleep timer" onClick={handleSleep}>
@@ -1825,6 +1934,8 @@ export default function App() {
           )}
 
           {!loading && view === "stats" && <StatsPage recent={recent} liked={liked} />}
+
+          {view === "lyrics" && <LyricsPage current={current} ytRef={ytRef} />}
 
           {!loading && view === "browse" && (
             <div>
@@ -2037,6 +2148,22 @@ export default function App() {
           onRepeat={() => { setRepeat(r => { toast(!r ? "Repeat on" : "Repeat off"); return !r; }); }}
           onFullscreen={() => setFullscreenOpen(true)}
         />
+
+        {/* MOBILE BOTTOM NAV */}
+        <nav className="mobile-nav">
+          {[
+            { v: "home", label: "Home", ico: <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> },
+            { v: "browse", label: "Browse", ico: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> },
+            { v: "liked", label: "Saved", ico: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> },
+            { v: "lyrics", label: "Lyrics", ico: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> },
+            { v: "settings", label: "More", ico: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg> },
+          ].map(n => (
+            <button key={n.v} className={`mobile-nav-item${view === n.v ? " active" : ""}`} onClick={() => setView(n.v)}>
+              {n.ico}
+              {n.label}
+            </button>
+          ))}
+        </nav>
       </div>
     </>
   );
