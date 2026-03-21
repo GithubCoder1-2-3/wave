@@ -403,9 +403,12 @@ button, input, select { transition: var(--trans); }
   max-width: 14px;
   min-width: 8px;
   margin: 0 4px;
+  height: 100%;
   border-radius: 4px;
   background: rgba(255,255,255,.22);
-  will-change: height, opacity;
+  transform-origin: center;
+  transform: scaleY(0.15);
+  will-change: transform, opacity;
 }
 .fs-art, .fs-art-placeholder { position: relative; z-index: 1; flex-shrink: 0; }
 
@@ -634,7 +637,7 @@ const FullscreenView = memo(({
       Math.max(0.1, Math.min(0.9, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
     );
     barEls.current.forEach((el, i) => {
-      if (el) { el.style.height = `${Math.round(baseHeights.current[i] * 100)}%`; el.style.opacity = 0.08 + baseHeights.current[i] * 0.35; }
+      if (el) { el.style.transform = `scaleY(${baseHeights.current[i].toFixed(3)})`; el.style.opacity = (0.08 + baseHeights.current[i] * 0.35).toFixed(3); }
     });
   }, [current?.id]);
 
@@ -649,8 +652,8 @@ const FullscreenView = memo(({
         if (!el) return;
         const h = baseHeights.current[i] ?? 0.3;
         const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + i * 0.42)) * 0.4 + Math.sin(t * 7 + i * 1.1) * 0.07));
-        el.style.height = `${Math.round(v * 100)}%`;
-        el.style.opacity = 0.08 + v * 0.35;
+        el.style.transform = `scaleY(${v.toFixed(3)})`;
+        el.style.opacity = (0.08 + v * 0.35).toFixed(3);
       });
       beatRef.current = requestAnimationFrame(tick);
     };
@@ -873,7 +876,7 @@ const FullscreenView = memo(({
           </div>
           <span className="fs-prog-time" style={{ textAlign: "right" }}>{fmt(duration)}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div className="fs-side-controls">
             <div className="fs-vol-wrap">
               <svg width="12" height="12" fill="currentColor" style={{ color: "rgba(255,255,255,.3)", flexShrink: 0 }} viewBox="0 0 24 24">
@@ -887,7 +890,7 @@ const FullscreenView = memo(({
             </div>
           </div>
 
-          <div className="fs-btn-row">
+          <div className="fs-btn-row" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
             <button className={`fs-ctrl${shuffle ? " active" : ""}`} onClick={onShuffle} title="Shuffle (S)">
               <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3h5v5l-1.5-1.5-4.538 4.538-1.414-1.414L17.5 5.5 16 4V3zM4 5l6.5 6.5-1.414 1.415L3 6.415 4 5zm10.5 9.5L9 10 7.5 11.5 13 17l1.5-1.5zm-4.538-4.538L3 17h2v1l6.5-6.5-1.538-1.538zM16 16l1.5-1.5 3.5 3.5V19h-5v-1l1.5-1.5L16 16z" /></svg>
             </button>
