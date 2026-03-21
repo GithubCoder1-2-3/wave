@@ -6,8 +6,10 @@ const DEEZER = "https://api.deezer.com";
 const YT_KEY = "AIzaSyAsh-f3HYGwjVf93YDlNkliBb_bBukn-uY";
 
 const dz = async (path) => {
-  const r = await fetch(`${CORS}${encodeURIComponent(DEEZER + path)}`);
-  return r.json();
+  try {
+    const r = await fetch(`${CORS}${encodeURIComponent(DEEZER + path)}`);
+    return r.json();
+  } catch { return {}; }
 };
 const ytSearch = async (q) => {
   const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&key=${YT_KEY}&maxResults=1`);
@@ -1801,15 +1803,25 @@ export default function App() {
     if (!track) return;
     setSimilarLoading(true); setSimilar([]);
     setView("similar");
-    // Check cache first
     const cached = await similarGet(track.id);
     if (cached) { setSimilar(cached); setSimilarLoading(false); return; }
     try {
+      // Try track radio first, fall back to artist radio
+      let tracks = [];
       const d = await dz(`/track/${track.id}/radio?limit=20`);
-      const tracks = d.data || [];
+      tracks = Array.isArray(d?.data) ? d.data : [];
+      if (!tracks.length && track.artist?.id) {
+        const d2 = await dz(`/artist/${track.artist.id}/radio?limit=20`);
+        tracks = Array.isArray(d2?.data) ? d2.data : [];
+      }
+      // Filter out the source track
+      tracks = tracks.filter(t => t.id !== track.id);
       setSimilar(tracks);
       if (tracks.length) similarSet(track.id, tracks);
-    } catch {}
+      else toast("⚠ No similar tracks found");
+    } catch (err) {
+      toast("⚠ Could not load similar tracks");
+    }
     setSimilarLoading(false);
   };
 
