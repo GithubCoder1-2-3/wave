@@ -777,68 +777,78 @@ function useHashView() {
 }
 
 /* ─── AUTH MODAL ────────────────────────────────────────────────── */
-const AuthModal = memo(({ onClose, onLogin }) => {
-  const [tab, setTab] = useState("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const AuthModal = memo(({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const handle = async () => {
-    setError(""); setSuccess(""); setLoading(true);
+  const signInWithGoogle = async () => {
+    setLoading(true); setError("");
     try {
-      if (tab === "magic") {
-        const d = await sbMagicLink(email);
-        if (d.error) setError(d.error.message || d.msg || "Error");
-        else setSuccess("Magic link sent — check your email!");
-      } else if (tab === "signup") {
-        const d = await sbSignUp(email, password);
-        if (d.error) setError(d.error.message || d.msg || "Error");
-        else { setSuccess("Account created — check email to confirm, then sign in."); }
+      const redirectTo = window.location.href.split("#")[0];
+      const r = await fetch(`${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`, {
+        method: "GET", headers: { "apikey": SB_KEY }, redirect: "manual",
+      });
+      // Supabase returns a redirect — follow it
+      const url = r.headers.get("location") || r.url;
+      if (url && url.includes("accounts.google.com")) {
+        window.location.href = url;
       } else {
-        const d = await sbSignIn(email, password);
-        if (d.error) setError(d.error.message || d.msg || "Invalid credentials");
-        else { setToken(d.access_token); onLogin(d); onClose(); }
+        // Direct browser to the auth URL
+        window.location.href = `${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
       }
-    } catch { setError("Network error"); }
-    setLoading(false);
+    } catch {
+      window.location.href = `${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.href.split("#")[0])}`;
+    }
   };
 
   useEffect(() => {
-    const fn = e => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && !loading) handle(); };
+    const fn = e => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [email, password, tab, loading]);
+  }, [onClose]);
 
   return (
     <div className="auth-modal-backdrop" onClick={onClose}>
-      <div className="auth-modal" onClick={e => e.stopPropagation()}>
-        <div className="auth-modal-header">
-          <div className="auth-modal-logo">
-            <WaveLogo size={16} />
-            <span className="auth-modal-title">WAVE</span>
+      <div className="auth-modal" style={{ textAlign: "center" }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ padding: "28px 28px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <WaveLogo size={28} />
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-.03em" }}>Sign in to WAVE</div>
+          <div style={{ fontSize: 12, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace" }}>
+            save playlists · sync across devices
           </div>
-          <span style={{ fontSize: 11, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace", marginLeft: 4 }}>accounts</span>
         </div>
-        <div className="auth-tabs">
-          {[["signin", "Sign in"], ["signup", "Sign up"], ["magic", "Magic link"]].map(([id, label]) => (
-            <div key={id} className={`auth-tab${tab === id ? " active" : ""}`} onClick={() => { setTab(id); setError(""); setSuccess(""); }}>{label}</div>
-          ))}
-        </div>
-        <div className="auth-body">
-          <input className="auth-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} autoFocus />
-          {tab !== "magic" && (
-            <input className="auth-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-          )}
-          {error && <div className="auth-error">{error}</div>}
-          {success && <div className="auth-success">{success}</div>}
-          <button className="auth-btn" onClick={handle} disabled={loading}>
-            {loading ? "…" : tab === "signin" ? "Sign in" : tab === "signup" ? "Create account" : "Send magic link"}
+
+        {/* Buttons */}
+        <div style={{ padding: "24px 28px 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            onClick={signInWithGoogle}
+            disabled={loading}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              width: "100%", padding: "11px 16px", background: "var(--bg3)",
+              border: "var(--line)", borderRadius: "var(--r2)", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "'Geist',sans-serif", color: "var(--tx)",
+              transition: "all .1s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--bg3)"}
+          >
+            {/* Google logo */}
+            <svg width="16" height="16" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.3 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.6-8 19.6-20 0-1.3-.1-2.7-.4-4z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.3 0-9.7-3.6-11.3-8.5l-6.5 5C9.5 39.5 16.2 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C41.1 35.3 44 30 44 24c0-1.3-.1-2.7-.4-4z"/>
+            </svg>
+            {loading ? "Redirecting…" : "Continue with Google"}
           </button>
-        </div>
-        <div className="auth-footer">
-          {tab === "signin" ? "No account? Click Sign up above." : tab === "signup" ? "Already have one? Click Sign in." : "We'll email you a one-click login link."}
+
+          {error && <div className="auth-error" style={{ textAlign: "center" }}>{error}</div>}
+
+          <div style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace", marginTop: 4, lineHeight: 1.6 }}>
+            By signing in you agree to our terms.<br />Your data is stored securely in Supabase.
+          </div>
         </div>
       </div>
     </div>
@@ -1714,6 +1724,22 @@ export default function App() {
 
   useEffect(() => {
     ensureYT(); whenYT(initYT); loadHome();
+    // Handle Supabase OAuth callback — token arrives in URL hash
+    const hash = window.location.hash;
+    if (hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get("access_token");
+      const email = params.get("email") || "";
+      if (token) {
+        setToken(token);
+        const uid = getUserId();
+        setUser({ id: uid, email });
+        // Clean hash without triggering hashchange navigation
+        window.history.replaceState(null, "", window.location.pathname + window.location.search + "#home");
+        loadPlaylists();
+        toast("✓ Signed in with Google");
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -2013,7 +2039,7 @@ export default function App() {
 
       {/* LYRICS */}
       {/* AUTH MODAL */}
-      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onLogin={d => { setUser({ id: getUserId(), email: d.user?.email }); loadPlaylists(); }} />}
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
 
       {/* CREATE PLAYLIST MODAL */}
       {showCreatePl && (
