@@ -610,6 +610,49 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
   );
 });
 
+/* ─── FS PROGRESS BAR (isolated to prevent re-renders hitting wave RAF) ── */
+const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek }) => {
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(currentDuration || 0);
+  const timerRef = useRef(null);
+  const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
+
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (playing) {
+      timerRef.current = setInterval(() => {
+        const t = ytRef.current?.getCurrentTime?.();
+        const d = ytRef.current?.getDuration?.();
+        if (t != null) setProgress(t);
+        if (d != null) setDuration(d);
+      }, 400);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [playing]);
+
+  useEffect(() => { setProgress(0); setDuration(currentDuration || 0); }, [currentId]);
+
+  const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
+
+  const handleSeek = e => {
+    const p = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+    const t = p * (duration || 0);
+    setProgress(t);
+    onSeek(t);
+  };
+
+  return (
+    <div className="fs-prog-row">
+      <span className="fs-prog-time">{fmt(progress)}</span>
+      <div className="fs-prog-rail" onClick={handleSeek}>
+        <div className="fs-prog-fill" style={{ width: `${pct}%` }} />
+        <div className="fs-prog-thumb" style={{ left: `${pct}%` }} />
+      </div>
+      <span className="fs-prog-time" style={{ textAlign: "right" }}>{fmt(duration)}</span>
+    </div>
+  );
+});
+
 /* ─── FULLSCREEN VIEW ───────────────────────────────────────────── */
 const FullscreenView = memo(({
   current, queue, qIdx, playing, buffering, shuffle, repeat,
@@ -620,9 +663,6 @@ const FullscreenView = memo(({
 }) => {
   const [activeTab, setActiveTab] = useState("queue");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const timerRef = useRef(null);
   const beatRef = useRef(null);
   const baseHeights = useRef([]);
   const barEls = useRef([]);
@@ -668,36 +708,12 @@ const FullscreenView = memo(({
   useEffect(() => () => { cancelAnimationFrame(beatRef.current); beatRef.current = null; }, []);
 
   useEffect(() => {
-    clearInterval(timerRef.current);
-    if (playing) {
-      timerRef.current = setInterval(() => {
-        const t = ytRef.current?.getCurrentTime?.();
-        const d = ytRef.current?.getDuration?.();
-        if (t != null) setProgress(t);
-        if (d != null) setDuration(d);
-      }, 400);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [playing]);
-
-  useEffect(() => { setProgress(0); setDuration(current?.duration || 0); }, [current?.id]);
-
-  useEffect(() => {
     const fn = e => {
       if (e.key === "Escape" || e.code === "KeyF") onClose();
     };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
-
-  const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
-
-  const handleSeek = e => {
-    const p = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
-    const t = p * (duration || 0);
-    setProgress(t);
-    onSeek(t);
-  };
 
 
   const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
@@ -874,14 +890,7 @@ const FullscreenView = memo(({
 
       {/* BOTTOM CONTROLS */}
       <div className="fs-controls">
-        <div className="fs-prog-row">
-          <span className="fs-prog-time">{fmt(progress)}</span>
-          <div className="fs-prog-rail" onClick={handleSeek}>
-            <div className="fs-prog-fill" style={{ width: `${pct}%` }} />
-            <div className="fs-prog-thumb" style={{ left: `${pct}%` }} />
-          </div>
-          <span className="fs-prog-time" style={{ textAlign: "right" }}>{fmt(duration)}</span>
-        </div>
+        <FsProgressBar playing={playing} currentId={current?.id} currentDuration={current?.duration} ytRef={ytRef} onSeek={onSeek} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div className="fs-side-controls">
             <div className="fs-vol-wrap">
