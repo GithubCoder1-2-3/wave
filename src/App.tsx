@@ -156,7 +156,7 @@ button, input, select { transition: var(--trans); }
 .td-art { width: 34px; height: 34px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
 .td-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; display: flex; align-items: center; gap: 5px; }
 .tr-active .td-name { color: var(--accent); }
-.td-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
+.td-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-album { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-dur { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--tx3); text-align: right; }
 .explicit-tag { font-size: 9px; font-weight: 700; letter-spacing: .04em; background: var(--tx3); color: var(--bg); padding: 1px 4px; border-radius: 2px; flex-shrink: 0; font-family: 'Geist Mono', monospace; }
@@ -190,7 +190,7 @@ button, input, select { transition: var(--trans); }
 .ehero-img.round { border-radius: 50%; }
 .ehero-info { padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; }
 .entity-type { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--tx3); font-family: 'Geist Mono', monospace; }
-.entity-name { font-size: 24px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; }
+.entity-name { font-size: 24px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .entity-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
 .emeta-item { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
 .emeta-item .lbl { color: var(--tx4); margin-right: 3px; }
@@ -202,7 +202,7 @@ button, input, select { transition: var(--trans); }
 .pl-thumb { width: 44px; height: 44px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
 .pl-meta { overflow: hidden; flex: 1; }
 .pl-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
-.pl-artist { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
+.pl-artist { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pl-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 0 14px; }
 .pl-btns { display: flex; align-items: center; gap: 12px; }
 .ctrl-btn { background: none; border: none; cursor: pointer; color: var(--tx3); display: flex; align-items: center; padding: 4px; border-radius: 3px; transition: all .1s; }
@@ -250,7 +250,7 @@ button, input, select { transition: var(--trans); }
 .queue-item-meta { overflow: hidden; flex: 1; }
 .queue-item-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .queue-item-name.active { color: var(--accent); }
-.queue-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
+.queue-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .queue-num { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--tx3); width: 18px; text-align: center; flex-shrink: 0; }
 
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; border-left: var(--line); }
@@ -278,11 +278,12 @@ button, input, select { transition: var(--trans); }
 
 .recent-strip { display: flex; overflow-x: auto; gap: 0; border-bottom: var(--line); }
 .recent-strip::-webkit-scrollbar { height: 0; }
-.recent-item { flex-shrink: 0; padding: 12px 14px; border-right: var(--line); cursor: pointer; display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 200px; }
+.recent-item { flex-shrink: 0; padding: 12px 14px; border-right: var(--line); cursor: pointer; display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 200px; overflow: hidden; }
 .recent-item:hover { background: var(--bg2); }
 .recent-item img { width: 36px; height: 36px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
+.recent-item div { min-width: 0; overflow: hidden; }
 .recent-item-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; }
+.recent-item-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .empty { padding: 60px 20px; text-align: center; border-bottom: var(--line); }
 .empty-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
@@ -314,11 +315,24 @@ button, input, select { transition: var(--trans); }
 
 .fs-main {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 0px;
   gap: 0;
   overflow: hidden;
   position: relative;
+  transition: grid-template-columns .25s cubic-bezier(.4,0,.2,1);
 }
+.fs-main.sidebar-open {
+  grid-template-columns: 1fr 300px;
+}
+.fs-sidebar-toggle {
+  position: absolute; top: 14px; left: 14px; z-index: 10;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 4px; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: rgba(255,255,255,.5); transition: all .1s;
+}
+.fs-sidebar-toggle:hover { color: #fafafa; background: rgba(255,255,255,.1); }
+.fs-sidebar-toggle.open { color: #fafafa; border-color: rgba(255,255,255,.3); }
 
 .fs-left {
   display: flex;
@@ -374,17 +388,26 @@ button, input, select { transition: var(--trans); }
 .fs-action-btn.active { color: #fafafa; border-color: rgba(255,255,255,.4); }
 .fs-action-btn.liked { color: #e5484d; border-color: #e5484d; }
 
-.fs-wave-container {
-  width: 100%; position: relative; height: 48px;
-  display: flex; align-items: flex-end; gap: 1.5px; overflow: hidden; cursor: pointer;
-  max-width: 380px;
+.fs-art-wrap { position: relative; flex-shrink: 0; }
+.fs-vinyl-waves {
+  position: absolute;
+  inset: -32px;
+  pointer-events: none;
+  z-index: 0;
+  display: flex; align-items: flex-end; justify-content: center; gap: 2px;
+  overflow: hidden;
+  border-radius: 10px;
 }
-.fs-wave-bar { flex: 1; border-radius: 1px; transition: height .1s, opacity .1s; }
-.fs-wave-bar.played { background: #fafafa; opacity: .9; }
-.fs-wave-bar.current { background: #fafafa; opacity: 1; }
-.fs-wave-bar.upcoming { background: rgba(255,255,255,.2); }
+.fs-vinyl-wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.18);
+  transform-origin: bottom center;
+  will-change: height, opacity;
+}
+.fs-art, .fs-art-placeholder { position: relative; z-index: 1; }
 
-.fs-right { display: flex; flex-direction: column; overflow: hidden; }
+.fs-right { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
 .fs-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0; padding: 0 20px; }
 .fs-tab {
@@ -405,7 +428,7 @@ button, input, select { transition: var(--trans); }
 .fs-queue-meta { overflow: hidden; flex: 1; }
 .fs-queue-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fs-queue-name.active { color: #fafafa; }
-.fs-queue-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; }
+.fs-queue-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fs-queue-dur { font-family: 'Geist Mono', monospace; font-size: 10px; color: rgba(255,255,255,.25); flex-shrink: 0; }
 
 .fs-related { flex: 1; overflow-y: auto; padding: 12px 0; }
@@ -414,7 +437,7 @@ button, input, select { transition: var(--trans); }
 .fs-related-item img { width: 34px; height: 34px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,.1); }
 .fs-related-meta { overflow: hidden; flex: 1; }
 .fs-related-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fs-related-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; }
+.fs-related-sub { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .fs-details { flex: 1; overflow-y: auto; padding: 20px; }
 .fs-detail-row { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,.05); padding: 10px 0; }
@@ -460,12 +483,13 @@ button, input, select { transition: var(--trans); }
 .fs-eq-b:nth-child(3) { animation-delay: .3s; }
 
 @media (max-width: 800px) {
-  .fs-main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .fs-main { grid-template-columns: 1fr !important; grid-template-rows: auto 1fr; }
+  .fs-main.sidebar-open { grid-template-columns: 1fr !important; }
   .fs-left { padding: 20px 20px 14px; flex-direction: row; gap: 14px; align-items: center; border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
   .fs-art, .fs-art-placeholder { width: 72px; height: 72px; }
   .fs-art.playing { box-shadow: none; transform: none; }
   .fs-meta { text-align: left; }
-  .fs-wave-container { display: none; }
+  .fs-vinyl-waves { display: none; }
   .fs-track-title { font-size: 13px; }
   .fs-controls { padding: 12px 16px 14px; }
   .fs-btn-row { gap: 12px; }
@@ -590,9 +614,13 @@ const FullscreenView = memo(({
   relatedTracks = [],
 }) => {
   const [activeTab, setActiveTab] = useState("queue");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [beatHeights, setBeatHeights] = useState([]);
   const timerRef = useRef(null);
+  const beatRef = useRef(null);
+  const baseHeights = useRef([]);
   const isLiked = liked.some(t => t.id === current?.id);
 
   useEffect(() => {
@@ -627,15 +655,33 @@ const FullscreenView = memo(({
     onSeek(t);
   };
 
-  // Seeded waveform heights per track
-  const waveHeights = useRef([]);
+  // Seeded base heights per track, animated on beat
+  const NUM_BARS = 48;
   useEffect(() => {
     const seed = current?.id || 12345;
     const rng = n => { let x = Math.sin(n + seed * 0.0001) * 43758.5453; return x - Math.floor(x); };
-    waveHeights.current = Array.from({ length: 80 }, (_, i) => {
-      return Math.max(0.06, Math.min(1, rng(i) * 0.7 + Math.sin(i * 0.4) * 0.2 + Math.sin(i * 0.1) * 0.1));
-    });
+    baseHeights.current = Array.from({ length: NUM_BARS }, (_, i) =>
+      Math.max(0.08, Math.min(1, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
+    );
+    setBeatHeights([...baseHeights.current]);
   }, [current?.id]);
+
+  useEffect(() => {
+    cancelAnimationFrame(beatRef.current);
+    if (!playing) return;
+    let t = 0;
+    const tick = () => {
+      t += 0.04;
+      setBeatHeights(baseHeights.current.map((h, i) => {
+        const beat = Math.abs(Math.sin(t * 2.1 + i * 0.18)) * 0.35;
+        const shimmer = Math.sin(t * 5.3 + i * 0.9) * 0.08;
+        return Math.max(0.05, Math.min(1, h + beat + shimmer));
+      }));
+      beatRef.current = requestAnimationFrame(tick);
+    };
+    beatRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(beatRef.current);
+  }, [playing]);
 
   const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
 
@@ -649,10 +695,30 @@ const FullscreenView = memo(({
         </svg>
       </button>
 
-      <div className="fs-main">
+      <div className={`fs-main${sidebarOpen ? " sidebar-open" : ""}`}>
         {/* LEFT PANEL */}
         <div className="fs-left">
+          <button
+            className={`fs-sidebar-toggle${sidebarOpen ? " open" : ""}`}
+            onClick={() => setSidebarOpen(s => !s)}
+            title="Toggle queue sidebar"
+          >
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+            </svg>
+          </button>
+
           <div className="fs-art-wrap">
+            {/* Ambient beat waves behind the art */}
+            <div className="fs-vinyl-waves">
+              {beatHeights.map((h, i) => (
+                <div
+                  key={i}
+                  className="fs-vinyl-wave-bar"
+                  style={{ height: `${Math.round(h * 100)}%`, opacity: 0.1 + h * 0.3 }}
+                />
+              ))}
+            </div>
             {coverUrl
               ? <img className={`fs-art${playing ? " playing" : ""}`} src={coverUrl} alt="" />
               : <div className="fs-art-placeholder">
@@ -697,14 +763,6 @@ const FullscreenView = memo(({
             </div>
           </div>
 
-          {/* Waveform scrubber */}
-          <div className="fs-wave-container" onClick={handleSeek}>
-            {waveHeights.current.map((h, i) => {
-              const barPct = (i / 80) * 100;
-              const state = barPct < pct ? "played" : barPct < pct + 1.5 ? "current" : "upcoming";
-              return <div key={i} className={`fs-wave-bar ${state}`} style={{ height: `${Math.max(4, h * 48)}px` }} />;
-            })}
-          </div>
         </div>
 
         {/* RIGHT PANEL */}
