@@ -400,10 +400,10 @@ button, input, select { transition: var(--trans); }
 }
 .fs-vinyl-wave-bar {
   flex: 1;
-  max-width: 8px;
-  min-width: 4px;
-  margin: 0 3px;
-  border-radius: 3px;
+  max-width: 14px;
+  min-width: 8px;
+  margin: 0 4px;
+  border-radius: 4px;
   background: rgba(255,255,255,.22);
   will-change: height, opacity;
 }
@@ -619,11 +619,44 @@ const FullscreenView = memo(({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [beatHeights, setBeatHeights] = useState([]);
   const timerRef = useRef(null);
   const beatRef = useRef(null);
   const baseHeights = useRef([]);
+  const barEls = useRef([]);
   const isLiked = liked.some(t => t.id === current?.id);
+
+  const NUM_BARS = 16;
+
+  useEffect(() => {
+    const seed = current?.id || 12345;
+    const rng = n => { let x = Math.sin(n + seed * 0.0001) * 43758.5453; return x - Math.floor(x); };
+    baseHeights.current = Array.from({ length: NUM_BARS }, (_, i) =>
+      Math.max(0.1, Math.min(0.9, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
+    );
+    barEls.current.forEach((el, i) => {
+      if (el) { el.style.height = `${Math.round(baseHeights.current[i] * 100)}%`; el.style.opacity = 0.08 + baseHeights.current[i] * 0.35; }
+    });
+  }, [current?.id]);
+
+  useEffect(() => {
+    cancelAnimationFrame(beatRef.current);
+    if (!playing) return;
+    let start = null;
+    const tick = (ts) => {
+      if (!start) start = ts;
+      const t = (ts - start) / 400;
+      barEls.current.forEach((el, i) => {
+        if (!el) return;
+        const h = baseHeights.current[i] ?? 0.3;
+        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + i * 0.42)) * 0.4 + Math.sin(t * 7 + i * 1.1) * 0.07));
+        el.style.height = `${Math.round(v * 100)}%`;
+        el.style.opacity = 0.08 + v * 0.35;
+      });
+      beatRef.current = requestAnimationFrame(tick);
+    };
+    beatRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(beatRef.current);
+  }, [playing]);
 
   useEffect(() => {
     clearInterval(timerRef.current);
@@ -657,34 +690,6 @@ const FullscreenView = memo(({
     onSeek(t);
   };
 
-  // Seeded base heights per track, animated on beat
-  const NUM_BARS = 60;
-  useEffect(() => {
-    const seed = current?.id || 12345;
-    const rng = n => { let x = Math.sin(n + seed * 0.0001) * 43758.5453; return x - Math.floor(x); };
-    baseHeights.current = Array.from({ length: NUM_BARS }, (_, i) =>
-      Math.max(0.08, Math.min(1, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
-    );
-    setBeatHeights([...baseHeights.current]);
-  }, [current?.id]);
-
-  useEffect(() => {
-    cancelAnimationFrame(beatRef.current);
-    if (!playing) return;
-    let start = null;
-    const tick = (ts) => {
-      if (!start) start = ts;
-      const t = (ts - start) / 400;
-      setBeatHeights(baseHeights.current.map((h, i) => {
-        const beat = Math.abs(Math.sin(t * 2.8 + i * 0.22)) * 0.4;
-        const shimmer = Math.sin(t * 7 + i * 1.1) * 0.07;
-        return Math.max(0.05, Math.min(1, h + beat + shimmer));
-      }));
-      beatRef.current = requestAnimationFrame(tick);
-    };
-    beatRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(beatRef.current);
-  }, [playing]);
 
   const coverUrl = current?.album?.cover_xl || current?.album?.cover_big || current?.album?.cover_medium || "";
 
@@ -714,8 +719,8 @@ const FullscreenView = memo(({
           <div className="fs-art-wrap">
             {/* Left waves */}
             <div className="fs-vinyl-waves">
-              {beatHeights.slice(0, 30).map((h, i) => (
-                <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="fs-vinyl-wave-bar" ref={el => barEls.current[i] = el} />
               ))}
             </div>
             {coverUrl
@@ -727,8 +732,8 @@ const FullscreenView = memo(({
                 </div>}
             {/* Right waves */}
             <div className="fs-vinyl-waves">
-              {beatHeights.slice(30, 60).map((h, i) => (
-                <div key={i} className="fs-vinyl-wave-bar" style={{ height: `${Math.round(h * 100)}%`, opacity: 0.08 + h * 0.35 }} />
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="fs-vinyl-wave-bar" ref={el => barEls.current[8 + i] = el} />
               ))}
             </div>
           </div>
