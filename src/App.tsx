@@ -650,8 +650,9 @@ const FullscreenView = memo(({
       const t = (ts - start) / 400;
       barEls.current.forEach((el, i) => {
         if (!el) return;
+        const barI = i < 8 ? i : 15 - i;
         const h = baseHeights.current[i] ?? 0.3;
-        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + i * 0.42)) * 0.4 + Math.sin(t * 7 + i * 1.1) * 0.07));
+        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + barI * 0.42)) * 0.4 + Math.sin(t * 7 + barI * 1.1) * 0.07));
         el.style.transform = `scaleY(${v.toFixed(3)})`;
         el.style.opacity = (0.08 + v * 0.35).toFixed(3);
       });
