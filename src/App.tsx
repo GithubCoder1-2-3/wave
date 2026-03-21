@@ -403,13 +403,23 @@ button, input, select { transition: var(--trans); }
   max-width: 14px;
   min-width: 8px;
   margin: 0 4px;
-  height: 100%;
+  height: 60%;
   border-radius: 4px;
   background: rgba(255,255,255,.22);
   transform-origin: center;
-  transform: scaleY(0.15);
-  will-change: transform, opacity;
+  animation: waveBar 1.1s ease-in-out infinite alternate;
+  animation-play-state: paused;
 }
+.fs-vinyl-waves.playing .fs-vinyl-wave-bar { animation-play-state: running; }
+.fs-vinyl-wave-bar:nth-child(1) { animation-duration: 1.0s; transform: scaleY(0.3); }
+.fs-vinyl-wave-bar:nth-child(2) { animation-duration: 1.3s; transform: scaleY(0.5); }
+.fs-vinyl-wave-bar:nth-child(3) { animation-duration: 0.9s; transform: scaleY(0.7); }
+.fs-vinyl-wave-bar:nth-child(4) { animation-duration: 1.2s; transform: scaleY(0.4); }
+.fs-vinyl-wave-bar:nth-child(5) { animation-duration: 0.8s; transform: scaleY(0.6); }
+.fs-vinyl-wave-bar:nth-child(6) { animation-duration: 1.4s; transform: scaleY(0.35); }
+.fs-vinyl-wave-bar:nth-child(7) { animation-duration: 1.0s; transform: scaleY(0.55); }
+.fs-vinyl-wave-bar:nth-child(8) { animation-duration: 0.85s; transform: scaleY(0.45); }
+@keyframes waveBar { from { transform: scaleY(0.15); opacity: .15; } to { transform: scaleY(0.85); opacity: .45; } }
 .fs-art, .fs-art-placeholder { position: relative; z-index: 1; flex-shrink: 0; }
 
 .fs-right { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
@@ -610,47 +620,17 @@ const TTable = memo(({ tracks, showAlbum = true, explicitFilter, currentId, play
   );
 });
 
-/* ─── WAVE ANIMATION CONTROLLER (module-level, zero React involvement) ── */
-const waveAnim = {
-  _raf: null,
-  _els: null,
-  _base: null,
-  start(els, base) {
-    this.stop();
-    this._els = els;
-    this._base = base;
-    let start = null;
-    const tick = (ts) => {
-      if (!this._els) return;
-      if (!start) start = ts;
-      const t = (ts - start) / 400;
-      for (let i = 0; i < this._els.length; i++) {
-        const el = this._els[i];
-        if (!el) continue;
-        const barI = i < 8 ? i : 15 - i;
-        const h = this._base[barI] ?? 0.3;
-        const v = Math.max(0.05, Math.min(1, h + Math.abs(Math.sin(t * 2.8 + barI * 0.42)) * 0.4 + Math.sin(t * 7 + barI * 1.1) * 0.07));
-        el.style.transform = `scaleY(${v.toFixed(3)})`;
-        el.style.opacity = (0.08 + v * 0.35).toFixed(3);
-      }
-      this._raf = requestAnimationFrame(tick);
-    };
-    this._raf = requestAnimationFrame(tick);
-  },
-  stop() {
-    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
-    this._els = null;
-  },
-};
-
 /* ─── WAVE BARS (fully isolated — never re-renders from parent prop changes) ── */
-const WaveBars = memo(({ side, barEls, offset }) => (
-  <div className="fs-vinyl-waves">
-    {Array.from({ length: 8 }, (_, i) => (
-      <div key={i} className="fs-vinyl-wave-bar" ref={el => { barEls.current[offset + i] = el; }} />
-    ))}
-  </div>
-), () => true); // always bail — never re-render
+const WaveBars = memo(({ playing }) => (
+  <>
+    <div className={`fs-vinyl-waves${playing ? " playing" : ""}`}>
+      {Array.from({ length: 8 }, (_, i) => <div key={i} className="fs-vinyl-wave-bar" />)}
+    </div>
+    <div className={`fs-vinyl-waves${playing ? " playing" : ""}`}>
+      {Array.from({ length: 8 }, (_, i) => <div key={i} className="fs-vinyl-wave-bar" />)}
+    </div>
+  </>
+));
 
 /* ─── FS PROGRESS BAR (isolated to prevent re-renders hitting wave RAF) ── */
 const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek }) => {
@@ -705,32 +685,7 @@ const FullscreenView = memo(({
 }) => {
   const [activeTab, setActiveTab] = useState("queue");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const baseHeights = useRef([]);
-  const barEls = useRef([]);
   const isLiked = liked.some(t => t.id === current?.id);
-
-  const NUM_BARS = 16;
-
-  useEffect(() => {
-    const seed = current?.id || 12345;
-    const rng = n => { let x = Math.sin(n + seed * 0.0001) * 43758.5453; return x - Math.floor(x); };
-    baseHeights.current = Array.from({ length: NUM_BARS }, (_, i) =>
-      Math.max(0.1, Math.min(0.9, rng(i) * 0.6 + Math.sin(i * 0.35) * 0.25 + 0.15))
-    );
-    barEls.current.forEach((el, i) => {
-      const barI = i < 8 ? i : 15 - i;
-      if (el) { el.style.transform = `scaleY(${baseHeights.current[barI].toFixed(3)})`; el.style.opacity = (0.08 + baseHeights.current[barI] * 0.35).toFixed(3); }
-    });
-    if (playing) waveAnim.start(barEls.current, baseHeights.current);
-  }, [current?.id]);
-
-  useEffect(() => {
-    if (playing) waveAnim.start(barEls.current, baseHeights.current);
-    else waveAnim.stop();
-    return () => waveAnim.stop();
-  }, [playing]);
-
-  useEffect(() => () => waveAnim.stop(), []);
 
   useEffect(() => {
     const fn = e => {
@@ -767,7 +722,7 @@ const FullscreenView = memo(({
           </button>
 
           <div className="fs-art-wrap">
-            <WaveBars offset={0} barEls={barEls} />
+            <WaveBars playing={playing} />
             {coverUrl
               ? <img className={`fs-art${playing ? " playing" : ""}`} src={coverUrl} alt="" />
               : <div className="fs-art-placeholder">
@@ -775,7 +730,6 @@ const FullscreenView = memo(({
                     <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
                   </svg>
                 </div>}
-            <WaveBars offset={8} barEls={barEls} />
           </div>
 
           <div className="fs-meta">
