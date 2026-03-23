@@ -69,21 +69,28 @@ const ytCacheSet = async (trackId, artist, title, videoId) => {
 /* ── Custom Playlists ── */
 const plGet = async () => {
   const uid = getUserId();
-  // Own playlists + public playlists from others
   if (uid) {
     const own = await sbFetch(`/user_playlists?select=*,playlist_tracks(count)&order=created_at.desc`) || [];
     return Array.isArray(own) ? own : [];
   }
-  // Not logged in — only public
   const pub = await sbFetch(`/user_playlists?select=*,playlist_tracks(count)&is_public=eq.true&order=created_at.desc`) || [];
   return Array.isArray(pub) ? pub : [];
+};
+const plGetPublic = async () => {
+  const d = await sbFetch(`/user_playlists?select=*,playlist_tracks(count)&is_public=eq.true&order=created_at.desc`) || [];
+  return Array.isArray(d) ? d : [];
 };
 const plCreate = async (name, isPublic = false) => {
   const uid = getUserId();
   return sbFetch("/user_playlists", { method: "POST", body: JSON.stringify({ name, is_public: isPublic, user_id: uid }) });
 };
 const plDelete = async (id) => { await sbFetch(`/user_playlists?id=eq.${id}`, { method: "DELETE" }); await sbFetch(`/playlist_tracks?playlist_id=eq.${id}`, { method: "DELETE" }); };
-const plAddTrack = async (playlistId, track) => sbFetch("/playlist_tracks", { method: "POST", body: JSON.stringify({ playlist_id: playlistId, track_id: track.id, track_data: track }) });
+const plAddTrack = async (playlistId, track) => {
+  await sbFetch("/playlist_tracks", { method: "POST", body: JSON.stringify({ playlist_id: playlistId, track_id: track.id, track_data: track }) });
+  // Set cover from first track if not already set
+  const cover = track.album?.cover_medium || track.album?.cover_small || null;
+  if (cover) await sbFetch(`/user_playlists?id=eq.${playlistId}`, { method: "PATCH", body: JSON.stringify({ cover_url: cover }) });
+};
 const plRemoveTrack = async (playlistId, trackId) => sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&track_id=eq.${trackId}`, { method: "DELETE" });
 const plGetTracks = async (playlistId) => { const d = await sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&select=track_data&order=created_at.asc`); return (d || []).map(r => r.track_data); };
 
@@ -792,13 +799,13 @@ button, input, select { transition: var(--trans); }
 /* ─── HASH ROUTER ───────────────────────────────────────────────── */
 const SIMPLE_VIEWS = ["home", "browse", "liked", "settings", "stats", "lyrics", "search", "playlist", "album", "artist", "genre", "library", "similar", "custom_playlist"];
 function getHashView() {
-  const h = window.location.hash.slice(1) || "home";
+  const h = window.location.hash.replace(/^#\/?/, "").replace(/\/$/, "") || "home";
   return SIMPLE_VIEWS.includes(h) ? h : "home";
 }
 function useHashView() {
   const [view, setViewState] = useState(getHashView);
   const setView = useCallback((v) => {
-    window.location.hash = v;
+    window.location.hash = `/${v}/`;
   }, []);
   useEffect(() => {
     const onPop = () => setViewState(getHashView());
@@ -1714,12 +1721,14 @@ export default function App() {
   const sleepRef = useRef(null);
   // Playlists & similar
   const [playlists, setPlaylists] = useState([]);
+  const [publicPlaylists, setPublicPlaylists] = useState([]);
   const [selCustomPl, setSelCustomPl] = useState(null);
   const [customPlTracks, setCustomPlTracks] = useState([]);
   const [showCreatePl, setShowCreatePl] = useState(false);
   const [newPlName, setNewPlName] = useState("");
   const [newPlPublic, setNewPlPublic] = useState(false);
   const [plSearch, setPlSearch] = useState("");
+  const [libTab, setLibTab] = useState("mine"); // "mine" | "public"
   const [addToPlMenu, setAddToPlMenu] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
@@ -1777,7 +1786,7 @@ export default function App() {
         setToken(token);
         const profile = getGoogleProfile();
         setUser({ id: getUserId(), ...profile });
-        window.history.replaceState(null, "", window.location.pathname + window.location.search + "#home");
+        window.history.replaceState(null, "", window.location.pathname + window.location.search + "#/home/");
         loadPlaylists();
         loadUserData();
         toast(`✓ Signed in${profile?.name ? ` as ${profile.name}` : " with Google"}`);
@@ -1984,23 +1993,24 @@ export default function App() {
   const downloadPreview = useCallback(async (track) => {
     if (!user) { setAuthOpen(true); toast("Sign in to download previews"); return; }
     if (!track.preview) { toast("⚠ No preview available for this track"); return; }
-    toast("⬇ Downloading 30s preview…");
-    try {
-      const r = await fetch(track.preview);
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `${track.artist?.name} - ${track.title} (preview).mp3`;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
-      toast("✓ Preview downloaded (30 seconds)");
-    } catch { toast("⚠ Download failed"); }
+    // Use a hidden <a> with the direct Deezer preview URL
+    // The browser handles it as a download since it's audio/mpeg
+    const a = document.createElement("a");
+    a.href = track.preview;
+    a.download = `${track.artist?.name} - ${track.title} (30s preview).mp3`;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast("✓ Downloading 30s preview — this is a short sample only");
   }, [user]);
 
   // Load playlists from Supabase
   const loadPlaylists = useCallback(async () => {
-    const d = await plGet();
-    setPlaylists(Array.isArray(d) ? d : []);
+    const [own, pub] = await Promise.all([plGet(), plGetPublic()]);
+    setPlaylists(own);
+    setPublicPlaylists(pub);
   }, []);
   useEffect(() => { loadPlaylists(); }, []);
 
@@ -2421,39 +2431,58 @@ export default function App() {
           {view === "library" && (
             <div>
               <div className="ph" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <div><div className="pt">Library</div><div className="ps">{playlists.length} playlists{!user ? " · sign in to create" : ""}</div></div>
+                <div>
+                  <div className="pt">Library</div>
+                  <div className="ps">{libTab === "mine" ? `${playlists.length} playlists` : `${publicPlaylists.length} public playlists`}{!user && libTab === "mine" ? " · sign in to create" : ""}</div>
+                </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <div style={{ position: "relative" }}>
                     <svg style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "var(--tx3)", pointerEvents: "none" }} width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     <input style={{ paddingLeft: 26, paddingRight: 10, height: 28, background: "var(--bg3)", border: "var(--line)", borderRadius: "var(--r)", fontSize: 12, fontFamily: "'Geist',sans-serif", color: "var(--tx)", outline: "none", width: 160 }} placeholder="Search playlists…" value={plSearch} onChange={e => setPlSearch(e.target.value)} />
                   </div>
-                  {user && <button className="pl-create-btn" onClick={() => setShowCreatePl(true)}>
+                  {user && libTab === "mine" && <button className="pl-create-btn" onClick={() => setShowCreatePl(true)}>
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
                     New
                   </button>}
                   {!user && <button className="pl-create-btn" onClick={() => setAuthOpen(true)}>Sign in</button>}
                 </div>
               </div>
+              {/* Tabs */}
+              <div style={{ display: "flex", borderBottom: "var(--line)", padding: "0 18px", background: "var(--bg2)" }}>
+                {[["mine", "My Playlists"], ["public", "Public"]].map(([id, label]) => (
+                  <div key={id} style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: libTab === id ? "var(--tx)" : "var(--tx3)", padding: "10px 12px", cursor: "pointer", borderBottom: libTab === id ? "2px solid var(--tx)" : "2px solid transparent", marginBottom: -1, transition: "all .1s" }} onClick={() => setLibTab(id)}>{label}</div>
+                ))}
+              </div>
               {(() => {
-                const filtered = playlists.filter(pl => !plSearch || pl.name.toLowerCase().includes(plSearch.toLowerCase()));
-                if (filtered.length === 0) return <div className="empty"><div className="empty-title">{plSearch ? `No playlists matching "${plSearch}"` : "No playlists yet"}</div><div className="empty-sub">{!user ? "Sign in to create playlists" : "Create one to organise your music"}</div></div>;
-                return <div className="cgrid">
-                  {filtered.map(pl => (
-                    <div key={pl.id} className="pl-card gc" onClick={() => openCustomPlaylist(pl)}>
-                      <div className="pl-card-icon gc-img" style={{ aspectRatio: 1 }}>
-                        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                const src = libTab === "mine" ? playlists : publicPlaylists;
+                const filtered = src.filter(pl => !plSearch || pl.name.toLowerCase().includes(plSearch.toLowerCase()));
+                if (filtered.length === 0) return (
+                  <div className="empty">
+                    <div className="empty-title">{plSearch ? `No playlists matching "${plSearch}"` : libTab === "mine" ? "No playlists yet" : "No public playlists"}</div>
+                    <div className="empty-sub">{libTab === "mine" && !user ? "Sign in to create playlists" : libTab === "mine" ? "Create one to organise your music" : "Public playlists from all users appear here"}</div>
+                  </div>
+                );
+                return (
+                  <div className="cgrid">
+                    {filtered.map(pl => (
+                      <div key={pl.id} className="pl-card gc" onClick={() => openCustomPlaylist(pl)}>
+                        {pl.cover_url
+                          ? <img className="gc-img" src={pl.cover_url} alt="" style={{ width: "100%", aspectRatio: 1, objectFit: "cover", borderRadius: "var(--r2)", marginBottom: 10, border: "var(--line)", display: "block" }} />
+                          : <div className="pl-card-icon gc-img" style={{ aspectRatio: 1 }}>
+                              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                            </div>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <div className="pl-card-title" style={{ flex: 1 }}>{pl.name}</div>
+                          <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 9, fontWeight: 600, letterSpacing: ".06em", color: pl.is_public ? "var(--green)" : "var(--tx3)", border: `1px solid ${pl.is_public ? "var(--green)" : "var(--border)"}`, borderRadius: 3, padding: "1px 4px", flexShrink: 0 }}>{pl.is_public ? "PUB" : "PRV"}</span>
+                        </div>
+                        <div className="pl-card-sub">{pl.playlist_tracks?.[0]?.count ?? 0} tracks</div>
+                        {user && pl.user_id === user.id && <button className="pl-card-delete" onClick={e => { e.stopPropagation(); deletePlaylist(pl.id); }}>
+                          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                        </button>}
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <div className="pl-card-title" style={{ flex: 1 }}>{pl.name}</div>
-                        <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 9, fontWeight: 600, letterSpacing: ".06em", color: pl.is_public ? "var(--green)" : "var(--tx3)", border: `1px solid ${pl.is_public ? "var(--green)" : "var(--border)"}`, borderRadius: 3, padding: "1px 4px", flexShrink: 0 }}>{pl.is_public ? "PUB" : "PRV"}</span>
-                      </div>
-                      <div className="pl-card-sub">{pl.playlist_tracks?.[0]?.count ?? 0} tracks</div>
-                      {user && pl.user_id === user.id && <button className="pl-card-delete" onClick={e => { e.stopPropagation(); deletePlaylist(pl.id); }}>
-                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                      </button>}
-                    </div>
-                  ))}
-                </div>;
+                    ))}
+                  </div>
+                );
               })()}
             </div>
           )}
@@ -2463,7 +2492,9 @@ export default function App() {
             <div>
               <div className="ehero">
                 <div className="ehero-img-cell" style={{ background: "var(--bg3)" }}>
-                  <svg width="48" height="48" fill="none" stroke="var(--tx3)" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                  {selCustomPl.cover_url
+                    ? <img className="ehero-img" src={selCustomPl.cover_url} alt="" />
+                    : <svg width="48" height="48" fill="none" stroke="var(--tx3)" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>}
                 </div>
                 <div className="ehero-info">
                   <div className="entity-type">Playlist</div>
