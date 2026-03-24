@@ -16,6 +16,39 @@ const ytSearch = async (q) => {
   const d = await r.json();
   return d.items?.[0]?.id?.videoId || null;
 };
+
+/* ─── WOLF API (Tidal streams via wolf.qqdl.site) ──────────────── */
+const WOLF = "https://wolf.qqdl.site";
+const wolfSearch = async (q) => {
+  try {
+    const r = await fetch(`${CORS}${encodeURIComponent(`${WOLF}/search?s=${encodeURIComponent(q)}`)}`);
+    const j = await r.json();
+    return (j?.data?.items || j?.items || [])[0]?.id || null;
+  } catch { return null; }
+};
+const wolfStream = async (id) => {
+  try {
+    const r = await fetch(`${CORS}${encodeURIComponent(`${WOLF}/track/?id=${id}`)}`);
+    const j = await r.json();
+    const manifest = j?.data?.manifest;
+    if (!manifest) return null;
+    const decoded = atob(manifest);
+    // DASH MPD → blob URL
+    if (decoded.includes("<MPD") || decoded.includes("<?xml")) {
+      const blob = new Blob([decoded], { type: "application/dash+xml" });
+      return { type: "dash", url: URL.createObjectURL(blob) };
+    }
+    // JSON with direct URL array
+    try {
+      const p = JSON.parse(decoded);
+      if (p?.urls?.[0]) return { type: "direct", url: p.urls[0] };
+    } catch {}
+    // Plain URL
+    const m = decoded.match(/https?:\/\/[^\s"'<>]+/);
+    if (m) return { type: "direct", url: m[0] };
+    return null;
+  } catch { return null; }
+};
 const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 const fmtBig = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n || 0);
 
@@ -179,12 +212,16 @@ const GLOBAL_CSS = `
 html, body { height: 100%; font-family: 'Geist', sans-serif; background: var(--bg); color: var(--tx); -webkit-font-smoothing: antialiased; overflow: hidden; }
 * { transition: var(--trans); }
 button, input, select { transition: var(--trans); }
+/* ── scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.shell { display: grid; grid-template-columns: var(--nav-w, 220px) 1fr; grid-template-rows: 1fr 82px 0px; height: 100vh; height: 100dvh; transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-.shell { display: grid; grid-template-columns: var(--nav-w, 220px) 1fr; grid-template-rows: 1fr 82px 0px; height: 100vh; transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
 .shell.nav-collapsed { --nav-w: 0px; }
 
 .nav { grid-row: 1/2; background: var(--bg); border-right: var(--line); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
@@ -742,7 +779,8 @@ button, input, select { transition: var(--trans); }
 
 /* ── MOBILE ── */
 @media (max-width: 680px) {
-  .shell { grid-template-columns: 1fr; grid-template-rows: 1fr 64px 52px; }
+  html, body { overflow: auto; }
+  .shell { grid-template-columns: 1fr; grid-template-rows: 1fr 64px 52px; height: 100dvh; position: fixed; width: 100%; top: 0; left: 0; }
   .shell.nav-collapsed { grid-template-columns: 1fr; }
   .nav { display: none; }
   .sidebar-toggle-btn { display: none; }
@@ -764,8 +802,6 @@ button, input, select { transition: var(--trans); }
   .ph { padding: 14px 14px 12px; }
   .pt { font-size: 17px; }
   .ttbl th:nth-child(3), .ttbl td:nth-child(3) { display: none; }
-
-  /* Mobile bottom nav */
   .mobile-nav { display: flex !important; }
 }
 .mobile-nav {
@@ -1739,6 +1775,7 @@ export default function App() {
   const userChipRef = useRef(null);
 
   const ytRef = useRef(null);
+  const tidalRef = useRef(null); // tracks current tidal track id being played
   const qRef = useRef([]), qIdxRef = useRef(0);
   const shuffleRef = useRef(shuffle), repeatRef = useRef(repeat), volRef = useRef(volume);
 
@@ -1776,6 +1813,12 @@ export default function App() {
 
   useEffect(() => {
     ensureYT(); whenYT(initYT); loadHome();
+    // Load dash.js for DASH stream playback (wolf API)
+    if (!window.dashjs) {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/dashjs@4.5.0/dist/dash.all.min.js";
+      document.head.appendChild(s);
+    }
     // Handle Supabase OAuth callback — token arrives in URL hash
     const hash = window.location.hash;
     if (hash.includes("access_token=")) {
@@ -1916,21 +1959,75 @@ export default function App() {
     if (list.length) { setQueue(list); setQIdx(idx); qRef.current = list; qIdxRef.current = idx; }
     setRecent(r => [track, ...r.filter(t => t.id !== track.id)].slice(0, 12));
     setMediaSession(track);
-    // Check YouTube cache first
+    // 1. Check YouTube cache
     let vid = await ytCacheGet(track.id);
     if (!vid) {
+      // 2. Search YouTube
       const searchQ = audioQuality === "high" ? `${track.title} ${track.artist?.name} official audio` : `${track.title} ${track.artist?.name} audio`;
       vid = await ytSearch(searchQ);
       if (vid) ytCacheSet(track.id, track.artist?.name || "", track.title || "", vid);
     }
-    if (!vid) { setBuffering(false); toast("⚠ No audio found for this track"); return; }
-    if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(vid); ytRef.current.setVolume(volRef.current); }
-    else setTimeout(() => { ytRef.current?.loadVideoById?.(vid); ytRef.current?.setVolume?.(volRef.current); }, 900);
+    if (vid) {
+      tidalRef.current = null;
+      // Pause wolf audio if playing
+      const wolfAudio = document.getElementById("wolf-audio");
+      if (wolfAudio) { wolfAudio.pause(); wolfAudio.src = ""; }
+      if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(vid); ytRef.current.setVolume(volRef.current); }
+      else setTimeout(() => { ytRef.current?.loadVideoById?.(vid); ytRef.current?.setVolume?.(volRef.current); }, 900);
+      return;
+    }
+    // 3. Wolf / Tidal stream fallback
+    const wolfId = await wolfSearch(`${track.title} ${track.artist?.name || ""}`);
+    if (wolfId) {
+      const stream = await wolfStream(wolfId);
+      if (stream) {
+        toast("▶ Playing via Tidal");
+        ytRef.current?.pauseVideo?.();
+        const wolfAudio = document.getElementById("wolf-audio");
+        if (stream.type === "dash" && window.dashjs) {
+          const dp = window.dashjs.MediaPlayer().create();
+          dp.initialize(wolfAudio, stream.url, true);
+          dp.setVolume(volRef.current / 100);
+        } else {
+          wolfAudio.src = stream.url;
+          wolfAudio.volume = volRef.current / 100;
+          wolfAudio.play();
+        }
+        wolfAudio.onplay = () => { setPlaying(true); setBuffering(false); };
+        wolfAudio.onpause = () => setPlaying(false);
+        wolfAudio.onended = () => advance(1);
+        wolfAudio.onerror = () => { setBuffering(false); toast("⚠ Tidal stream failed"); };
+        setBuffering(false); setPlaying(true);
+        return;
+      }
+    }
+    // 4. Deezer 30s preview last resort
+    if (track.preview) {
+      toast("⚠ Full audio unavailable — playing 30s preview");
+      const audio = new Audio(`${CORS}${encodeURIComponent(track.preview)}`);
+      audio.volume = volRef.current / 100;
+      audio.play().then(() => { setPlaying(true); setBuffering(false); }).catch(() => {
+        setBuffering(false); toast("⚠ Could not play preview");
+      });
+      return;
+    }
+    setBuffering(false); toast("⚠ No audio source found for this track");
   };
 
-  const togglePlay = useCallback(() => { if (!ytRef.current) return; playing ? ytRef.current.pauseVideo() : ytRef.current.playVideo(); }, [playing]);
+  const togglePlay = useCallback(() => {
+    const wolfAudio = document.getElementById("wolf-audio");
+    if (wolfAudio && wolfAudio.src && !wolfAudio.paused) { wolfAudio.pause(); return; }
+    if (wolfAudio && wolfAudio.src && wolfAudio.paused) { wolfAudio.play(); return; }
+    if (!ytRef.current) return;
+    playing ? ytRef.current.pauseVideo() : ytRef.current.playVideo();
+  }, [playing]);
   const handleSeek = useCallback((t) => { ytRef.current?.seekTo?.(t, true); }, []);
-  const changeVol = useCallback(v => { setVolume(v); volRef.current = v; ytRef.current?.setVolume?.(v); }, []);
+  const changeVol = useCallback(v => {
+    setVolume(v); volRef.current = v;
+    ytRef.current?.setVolume?.(v);
+    const wolfAudio = document.getElementById("wolf-audio");
+    if (wolfAudio) wolfAudio.volume = v / 100;
+  }, []);
   const toggleLike = useCallback(t => {
     if (!user) { setAuthOpen(true); toast("Sign in to save tracks"); return; }
     setLiked(p => {
@@ -1987,23 +2084,33 @@ export default function App() {
   }, [sleepMins]);
 
   const signOut = async () => {
-    await sbSignOut(); setUser(null); setPlaylists([]); setLiked(lsGet("liked", [])); toast("Signed out");
+    await sbSignOut();
+    // Clear all wave_ localStorage keys
+    Object.keys(localStorage).filter(k => k.startsWith("wave_")).forEach(k => localStorage.removeItem(k));
+    setUser(null); setPlaylists([]); setPublicPlaylists([]);
+    setLiked([]); setRecent([]);
+    toast("Signed out");
+    window.location.href = "/";
   };
 
   const downloadPreview = useCallback(async (track) => {
     if (!user) { setAuthOpen(true); toast("Sign in to download previews"); return; }
     if (!track.preview) { toast("⚠ No preview available for this track"); return; }
-    // Use a hidden <a> with the direct Deezer preview URL
-    // The browser handles it as a download since it's audio/mpeg
-    const a = document.createElement("a");
-    a.href = track.preview;
-    a.download = `${track.artist?.name} - ${track.title} (30s preview).mp3`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast("✓ Downloading 30s preview — this is a short sample only");
+    toast("⬇ Preparing 30s preview…");
+    try {
+      // Fetch through CORS proxy so we get the raw bytes, not a browser-played stream
+      const r = await fetch(`${CORS}${encodeURIComponent(track.preview)}`);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(new Blob([blob], { type: "audio/mpeg" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${track.artist?.name} - ${track.title} (30s preview).mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast("✓ Downloaded — 30 second preview only");
+    } catch { toast("⚠ Download failed"); }
   }, [user]);
 
   // Load playlists from Supabase
@@ -2093,6 +2200,7 @@ export default function App() {
     <>
       <style>{GLOBAL_CSS}</style>
       <div id="yt-mount" />
+      <audio id="wolf-audio" crossOrigin="anonymous" style={{ display: "none" }} onEnded={() => advance(1)} />
 
       {/* TOASTS */}
       <div className="toast-area">
