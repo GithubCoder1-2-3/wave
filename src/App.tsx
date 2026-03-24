@@ -19,7 +19,7 @@ const ytSearch = async (q) => {
 
 /* ─── WOLF API — exact match to VIBEZ by friend ────────────────── */
 const WOLF_BASES = [
-  "https://api.allorigins.win/raw?url=https://wolf.qqdl.site",
+  "https://cors-proxy.iammrbeastbackup.workers.dev/?url=https://wolf.qqdl.site",
   "https://corsproxy.io/?https://wolf.qqdl.site",
   "https://api.codetabs.com/v1/proxy?quest=https://wolf.qqdl.site",
 ];
