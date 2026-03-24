@@ -1357,15 +1357,33 @@ const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek
   const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 
   useEffect(() => {
-    clearInterval(timerRef.current);
-    if (playing) {
-      timerRef.current = setInterval(() => {
-        const t = ytRef.current?.getCurrentTime?.();
-        const d = ytRef.current?.getDuration?.();
-        if (t != null) setProgress(t);
-        if (d != null) setDuration(d);
-      }, 400);
+  clearInterval(timerRef.current);
+
+  const waitForYT = () => {
+    const yt = ytRef.current;
+
+    // 🔥 wait until YouTube is ACTUALLY ready
+    if (!yt || typeof yt.getDuration !== "function") {
+      requestAnimationFrame(waitForYT);
+      return;
     }
+
+    timerRef.current = setInterval(() => {
+      const t = yt.getCurrentTime();
+      const d = yt.getDuration();
+
+      // ✅ ONLY update if valid
+      if (!isNaN(t)) setProgress(t);
+      if (!isNaN(d) && d > 0) setDuration(d);
+    }, 400);
+  };
+
+  if (playing) {
+    waitForYT();
+  }
+
+  return () => clearInterval(timerRef.current);
+}, [playing, current?.id]);
     return () => clearInterval(timerRef.current);
   }, [playing]);
 
