@@ -17,37 +17,69 @@ const ytSearch = async (q) => {
   return d.items?.[0]?.id?.videoId || null;
 };
 
-/* ─── WOLF API (Tidal streams via wolf.qqdl.site) ──────────────── */
-const WOLF = "https://wolf.qqdl.site";
+/* ─── WOLF API — exact match to VIBEZ by friend ────────────────── */
+const WOLF_BASES = [
+  "https://api.allorigins.win/raw?url=https://wolf.qqdl.site",
+  "https://corsproxy.io/?https://wolf.qqdl.site",
+  "https://api.codetabs.com/v1/proxy?quest=https://wolf.qqdl.site",
+];
+let _wolfBase = null;
+const wolfFetch = async (path) => {
+  if (_wolfBase) {
+    try { const r = await fetch(_wolfBase + path); if (r.ok) return r; } catch {}
+  }
+  for (const base of WOLF_BASES) {
+    try { const r = await fetch(base + path); if (r.ok) { _wolfBase = base; return r; } } catch {}
+  }
+  throw new Error("All wolf endpoints failed");
+};
+const _trackCache = new Map();
 const wolfSearch = async (q) => {
   try {
-    const r = await fetch(`${CORS}${encodeURIComponent(`${WOLF}/search?s=${encodeURIComponent(q)}`)}`);
+    const r = await wolfFetch(`/search?s=${encodeURIComponent(q)}`);
     const j = await r.json();
-    return (j?.data?.items || j?.items || [])[0]?.id || null;
+    const items = (j?.data?.items || j?.items || []);
+    return items[0]?.id || null;
   } catch { return null; }
 };
-const wolfStream = async (id) => {
+const wolfGetTrack = async (id) => {
+  if (_trackCache.has(id)) return _trackCache.get(id);
   try {
-    const r = await fetch(`${CORS}${encodeURIComponent(`${WOLF}/track/?id=${id}`)}`);
-    const j = await r.json();
-    const manifest = j?.data?.manifest;
-    if (!manifest) return null;
+    const r = await wolfFetch(`/track/?id=${id}`);
+    const d = await r.json();
+    _trackCache.set(id, d);
+    return d;
+  } catch { return null; }
+};
+const wolfExtractStream = (manifest) => {
+  try {
     const decoded = atob(manifest);
-    // DASH MPD → blob URL
     if (decoded.includes("<MPD") || decoded.includes("<?xml")) {
       const blob = new Blob([decoded], { type: "application/dash+xml" });
       return { type: "dash", url: URL.createObjectURL(blob) };
     }
-    // JSON with direct URL array
-    try {
-      const p = JSON.parse(decoded);
-      if (p?.urls?.[0]) return { type: "direct", url: p.urls[0] };
-    } catch {}
-    // Plain URL
+    try { const p = JSON.parse(decoded); if (p?.urls?.[0]) return { type: "direct", url: p.urls[0] }; } catch {}
     const m = decoded.match(/https?:\/\/[^\s"'<>]+/);
     if (m) return { type: "direct", url: m[0] };
     return null;
   } catch { return null; }
+};
+let _dashPlayer = null;
+const wolfPlay = async (audioEl, title, artist) => {
+  const id = await wolfSearch(`${title} ${artist}`);
+  if (!id) return false;
+  const data = await wolfGetTrack(id);
+  if (!data?.data?.manifest) return false;
+  const stream = wolfExtractStream(data.data.manifest);
+  if (!stream) return false;
+  if (stream.type === "dash" && window.dashjs) {
+    if (!_dashPlayer) _dashPlayer = window.dashjs.MediaPlayer().create();
+    _dashPlayer.initialize(audioEl, stream.url, true);
+  } else {
+    audioEl.src = stream.url;
+    await audioEl.play();
+  }
+  return true;
 };
 const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 const fmtBig = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n || 0);
@@ -1775,7 +1807,6 @@ export default function App() {
   const userChipRef = useRef(null);
 
   const ytRef = useRef(null);
-  const tidalRef = useRef(null); // tracks current tidal track id being played
   const qRef = useRef([]), qIdxRef = useRef(0);
   const shuffleRef = useRef(shuffle), repeatRef = useRef(repeat), volRef = useRef(volume);
 
@@ -1959,49 +1990,41 @@ export default function App() {
     if (list.length) { setQueue(list); setQIdx(idx); qRef.current = list; qIdxRef.current = idx; }
     setRecent(r => [track, ...r.filter(t => t.id !== track.id)].slice(0, 12));
     setMediaSession(track);
-    // 1. Check YouTube cache
+
+    const wolfAudio = document.getElementById("wolf-audio");
+
+    // 1. Wolf / Tidal (exact VIBEZ strategy — first)
+    try {
+      if (wolfAudio) {
+        wolfAudio.onplay = () => { setPlaying(true); setBuffering(false); };
+        wolfAudio.onpause = () => setPlaying(false);
+        wolfAudio.onended = () => advance(1);
+        wolfAudio.onerror = null;
+        wolfAudio.volume = volRef.current / 100;
+        const ok = await wolfPlay(wolfAudio, track.title, track.artist?.name || "");
+        if (ok) {
+          ytRef.current?.pauseVideo?.();
+          setPlaying(true); setBuffering(false);
+          return;
+        }
+      }
+    } catch {}
+
+    // 2. YouTube cache
     let vid = await ytCacheGet(track.id);
     if (!vid) {
-      // 2. Search YouTube
       const searchQ = audioQuality === "high" ? `${track.title} ${track.artist?.name} official audio` : `${track.title} ${track.artist?.name} audio`;
       vid = await ytSearch(searchQ);
       if (vid) ytCacheSet(track.id, track.artist?.name || "", track.title || "", vid);
     }
     if (vid) {
-      tidalRef.current = null;
-      // Pause wolf audio if playing
-      const wolfAudio = document.getElementById("wolf-audio");
       if (wolfAudio) { wolfAudio.pause(); wolfAudio.src = ""; }
       if (ytRef.current?.loadVideoById) { ytRef.current.loadVideoById(vid); ytRef.current.setVolume(volRef.current); }
       else setTimeout(() => { ytRef.current?.loadVideoById?.(vid); ytRef.current?.setVolume?.(volRef.current); }, 900);
       return;
     }
-    // 3. Wolf / Tidal stream fallback
-    const wolfId = await wolfSearch(`${track.title} ${track.artist?.name || ""}`);
-    if (wolfId) {
-      const stream = await wolfStream(wolfId);
-      if (stream) {
-        toast("▶ Playing via Tidal");
-        ytRef.current?.pauseVideo?.();
-        const wolfAudio = document.getElementById("wolf-audio");
-        if (stream.type === "dash" && window.dashjs) {
-          const dp = window.dashjs.MediaPlayer().create();
-          dp.initialize(wolfAudio, stream.url, true);
-          dp.setVolume(volRef.current / 100);
-        } else {
-          wolfAudio.src = stream.url;
-          wolfAudio.volume = volRef.current / 100;
-          wolfAudio.play();
-        }
-        wolfAudio.onplay = () => { setPlaying(true); setBuffering(false); };
-        wolfAudio.onpause = () => setPlaying(false);
-        wolfAudio.onended = () => advance(1);
-        wolfAudio.onerror = () => { setBuffering(false); toast("⚠ Tidal stream failed"); };
-        setBuffering(false); setPlaying(true);
-        return;
-      }
-    }
-    // 4. Deezer 30s preview last resort
+
+    // 3. Deezer 30s preview last resort
     if (track.preview) {
       toast("⚠ Full audio unavailable — playing 30s preview");
       const audio = new Audio(`${CORS}${encodeURIComponent(track.preview)}`);
