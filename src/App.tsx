@@ -761,6 +761,29 @@ button, input, select { transition: var(--trans); }
 .add-to-pl-menu { position: fixed; z-index: 200; background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); box-shadow: var(--shadow-lg); min-width: 180px; overflow: hidden; animation: cmdIn .12s ease; }
 .add-to-pl-item { padding: 8px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
 .add-to-pl-item:hover { background: var(--bg3); }
+/* Add-to-playlist full modal */
+.atp-modal-backdrop { position: fixed; inset: 0; z-index: 350; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; animation: fadeIn .15s ease; }
+.atp-modal { background: var(--bg); border: 2px solid var(--tx); border-radius: var(--r); width: min(420px, 94vw); max-height: 80vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); overflow: hidden; animation: cmdIn .15s ease; }
+.atp-modal-header { padding: 14px 16px 10px; border-bottom: var(--line); flex-shrink: 0; }
+.atp-modal-title { font-size: 14px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px; }
+.atp-modal-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; margin-bottom: 8px; }
+.atp-search { width: 100%; padding: 6px 10px 6px 28px; background: var(--bg3); border: var(--line); border-radius: var(--r2); font-size: 12px; font-family: 'Geist', sans-serif; color: var(--tx); outline: none; }
+.atp-search:focus { border-color: var(--border2); }
+.atp-search-wrap { position: relative; }
+.atp-search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--tx3); }
+.atp-track-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.atp-track { display: flex; align-items: center; gap: 10px; padding: 7px 14px; cursor: pointer; transition: background .1s; }
+.atp-track:hover { background: var(--bg2); }
+.atp-track.selected { background: var(--bg3); }
+.atp-track img { width: 32px; height: 32px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; }
+.atp-track-meta { overflow: hidden; flex: 1; }
+.atp-track-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atp-track-sub { font-size: 11px; color: var(--tx3); font-family: 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atp-modal-footer { padding: 10px 14px; border-top: var(--line); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 8px; background: var(--bg2); }
+.atp-pl-list { flex: 1; overflow-y: auto; max-height: 160px; border-bottom: var(--line); }
+.atp-pl-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; cursor: pointer; transition: background .1s; font-size: 12px; }
+.atp-pl-item:hover { background: var(--bg2); }
+.atp-pl-item img { width: 28px; height: 28px; border-radius: 3px; object-fit: cover; border: var(--line); flex-shrink: 0; background: var(--bg3); }
 
 /* ── PLAYLIST EDIT ── */
 .pl-edit-bar { display: flex; align-items: center; gap: 8px; padding: 8px 18px; border-bottom: var(--line); background: var(--bg2); flex-wrap: wrap; }
@@ -1823,6 +1846,7 @@ export default function App() {
   const [plSearch, setPlSearch] = useState("");
   const [libTab, setLibTab] = useState("mine"); // "mine" | "public"
   const [addToPlMenu, setAddToPlMenu] = useState(null);
+  const [atpModal, setAtpModal] = useState(null); // { tracks: [...] } — full add-to-playlist modal
   const [similar, setSimilar] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
   // Auth
@@ -1832,6 +1856,7 @@ export default function App() {
   const userChipRef = useRef(null);
 
   const ytRef = useRef(null);
+  const signingOutRef = useRef(false);
   const wolfActiveRef = useRef(false); // true when wolf audio is the active source
   // Unified time accessors — works for both YouTube and wolf audio
   const getCurrentTime = () => {
@@ -1855,8 +1880,8 @@ export default function App() {
   useEffect(() => { repeatRef.current = repeat; }, [repeat]);
   useEffect(() => { volRef.current = volume; }, [volume]);
 
-  useEffect(() => { lsSet("liked", liked); if (user) userDataSave({ liked }); }, [liked]);
-  useEffect(() => { lsSet("recent", recent); if (user) userDataSave({ recent }); }, [recent]);
+  useEffect(() => { lsSet("liked", liked); if (user && !signingOutRef.current) userDataSave({ liked }); }, [liked]);
+  useEffect(() => { lsSet("recent", recent); if (user && !signingOutRef.current) userDataSave({ recent }); }, [recent]);
   useEffect(() => { lsSet("volume", volume); }, [volume]);
   useEffect(() => { lsSet("shuffle", shuffle); }, [shuffle]);
   useEffect(() => { lsSet("repeat", repeat); }, [repeat]);
@@ -2150,8 +2175,8 @@ export default function App() {
   }, [sleepMins]);
 
   const signOut = async () => {
+    signingOutRef.current = true; // prevent effects from saving empty state to Supabase
     await sbSignOut();
-    // Clear all wave_ localStorage keys
     Object.keys(localStorage).filter(k => k.startsWith("wave_")).forEach(k => localStorage.removeItem(k));
     setUser(null); setPlaylists([]); setPublicPlaylists([]);
     setLiked([]); setRecent([]);
@@ -2290,8 +2315,8 @@ export default function App() {
     onSimilar: getSimilar,
     onDownload: downloadPreview,
     onAddToPlaylist: (track, e) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setAddToPlMenu({ track, x: rect.left, y: rect.bottom + 4 });
+      if (!user) { setAuthOpen(true); toast("Sign in to add to playlists"); return; }
+      setAtpModal({ tracks: [track] });
     },
   };
 
@@ -2354,29 +2379,130 @@ export default function App() {
       )}
 
       {/* ADD TO PLAYLIST CONTEXT MENU */}
+      {/* ADD TO PLAYLIST MODAL */}
+      {atpModal && (() => {
+        const AtpModal = () => {
+          const [search, setSearch] = useState("");
+          const [selTracks, setSelTracks] = useState(new Set(atpModal.tracks.map(t => t.id)));
+          const pool = atpModal.sourceList || atpModal.tracks; // tracks to pick from
+          const isSingle = atpModal.tracks.length === 1 && !atpModal.sourceList;
+          const myPlaylists = playlists.filter(pl => user && pl.user_id === user.id);
+          const filtered = pool.filter(t =>
+            !search || t.title?.toLowerCase().includes(search.toLowerCase()) || t.artist?.name?.toLowerCase().includes(search.toLowerCase())
+          );
+          const handleAdd = async (pl) => {
+            const toAdd = pool.filter(t => selTracks.has(t.id));
+            if (!toAdd.length) { toast("Select at least one track"); return; }
+            await Promise.all(toAdd.map(t => plAddTrack(pl.id, t)));
+            setSelectedTracks(new Set());
+            setAtpModal(null);
+            toast(`✓ Added ${toAdd.length} track${toAdd.length > 1 ? "s" : ""} to "${pl.name}"`);
+          };
+          return (
+            <div className="atp-modal-backdrop" onClick={() => setAtpModal(null)}>
+              <div className="atp-modal" onClick={e => e.stopPropagation()}>
+                <div className="atp-modal-header">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div className="atp-modal-title">Add to Playlist</div>
+                    <button className="icon-btn" onClick={() => setAtpModal(null)}>
+                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                  {!isSingle && (
+                    <div className="atp-modal-sub">{selTracks.size} of {pool.length} tracks selected</div>
+                  )}
+                  {!isSingle && (
+                    <div className="atp-search-wrap" style={{ marginBottom: 0 }}>
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                      <input className="atp-search" placeholder="Search tracks to add…" value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+                    </div>
+                  )}
+                </div>
+
+                {/* Track list (only shown for multi) */}
+                {!isSingle && (
+                  <div className="atp-track-list">
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", borderBottom: "var(--line)", fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)" }}>
+                      <input type="checkbox"
+                        checked={filtered.length > 0 && filtered.every(t => selTracks.has(t.id))}
+                        onChange={() => {
+                          const allSel = filtered.every(t => selTracks.has(t.id));
+                          setSelTracks(prev => {
+                            const n = new Set(prev);
+                            filtered.forEach(t => allSel ? n.delete(t.id) : n.add(t.id));
+                            return n;
+                          });
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                      {filtered.length} tracks
+                    </div>
+                    {filtered.map(t => (
+                      <div key={t.id} className={`atp-track${selTracks.has(t.id) ? " selected" : ""}`}
+                        onClick={() => setSelTracks(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })}>
+                        <input type="checkbox" checked={selTracks.has(t.id)} onChange={() => {}} style={{ cursor: "pointer", flexShrink: 0 }} />
+                        {t.album?.cover_small ? <img src={t.album.cover_small} alt="" /> : <div style={{ width: 32, height: 32, background: "var(--bg3)", borderRadius: 3, border: "var(--line)", flexShrink: 0 }} />}
+                        <div className="atp-track-meta">
+                          <div className="atp-track-name">{t.title}</div>
+                          <div className="atp-track-sub">{t.artist?.name}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Playlist picker */}
+                <div style={{ padding: "8px 14px 4px", fontSize: 10, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)", letterSpacing: ".06em", textTransform: "uppercase", flexShrink: 0 }}>
+                  {isSingle ? `Adding: ${atpModal.tracks[0]?.title}` : "Pick a playlist"}
+                </div>
+                <div className="atp-pl-list">
+                  {myPlaylists.length === 0
+                    ? <div style={{ padding: "16px 14px", fontSize: 12, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace" }}>No playlists yet — create one in Library</div>
+                    : myPlaylists.map(pl => (
+                      <div key={pl.id} className="atp-pl-item" onClick={() => handleAdd(pl)}>
+                        {pl.cover_url
+                          ? <img src={pl.cover_url} alt="" />
+                          : <div style={{ width: 28, height: 28, background: "var(--bg3)", borderRadius: 3, border: "var(--line)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                            </div>}
+                        <div style={{ overflow: "hidden", flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pl.name}</div>
+                          <div style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "'Geist Mono',monospace" }}>{pl.playlist_tracks?.[0]?.count ?? 0} tracks · {pl.is_public ? "public" : "private"}</div>
+                        </div>
+                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                      </div>
+                    ))}
+                </div>
+                <div className="atp-modal-footer">
+                  <button className="pl-modal-btn" onClick={() => setAtpModal(null)}>
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg> Cancel
+                  </button>
+                  {!isSingle && <span style={{ fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)" }}>{selTracks.size} selected</span>}
+                </div>
+              </div>
+            </div>
+          );
+        };
+        return <AtpModal />;
+      })()}
+
+      {/* LEGACY small add-to-pl dropdown (kept for fallback, hidden when modal is used) */}
       {addToPlMenu && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setAddToPlMenu(null)} />
           <div className="add-to-pl-menu" style={{ top: addToPlMenu.y, left: Math.min(addToPlMenu.x, window.innerWidth - 200), zIndex: 200 }}>
             <div style={{ padding: "6px 14px 4px", fontSize: 10, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)", letterSpacing: ".06em", textTransform: "uppercase" }}>
-              {addToPlMenu.tracks ? `Add ${addToPlMenu.tracks.length} tracks to…` : "Add to playlist"}
+              Add to playlist
             </div>
             {playlists.filter(pl => user && pl.user_id === user.id).length === 0
               ? <div className="add-to-pl-item" style={{ color: "var(--tx3)", cursor: "default" }}>No playlists — create one first</div>
               : playlists.filter(pl => user && pl.user_id === user.id).map(pl => (
                 <div key={pl.id} className="add-to-pl-item" onClick={async () => {
-                  if (addToPlMenu.tracks) {
-                    await Promise.all(addToPlMenu.tracks.map(t => plAddTrack(pl.id, t)));
-                    toast(`✓ Added ${addToPlMenu.tracks.length} tracks to ${pl.name}`);
-                    setSelectedTracks(new Set());
-                  } else {
-                    await addToPlaylist(pl.id, addToPlMenu.track);
-                  }
+                  await addToPlaylist(pl.id, addToPlMenu.track);
                   setAddToPlMenu(null);
                 }}>
                   <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
                   {pl.name}
-                  {pl.is_public && <span style={{ marginLeft: "auto", fontSize: 9, fontFamily: "'Geist Mono',monospace", color: "var(--green)" }}>PUB</span>}
                 </div>
               ))}
           </div>
@@ -2797,7 +2923,10 @@ export default function App() {
                       <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                       Remove from playlist
                     </button>
-                    <button onClick={() => { const rect = document.getElementById("pl-multiselect-add-btn")?.getBoundingClientRect(); setAddToPlMenu({ tracks: [...selectedTracks].map(id => customPlTracks.find(t => t.id === id)).filter(Boolean), x: rect?.left || 100, y: (rect?.bottom || 100) + 4 }); }} id="pl-multiselect-add-btn">
+                    <button onClick={() => {
+                      const tracks = [...selectedTracks].map(id => customPlTracks.find(t => t.id === id)).filter(Boolean);
+                      setAtpModal({ tracks });
+                    }} id="pl-multiselect-add-btn">
                       <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                       Add to playlist
                     </button>
