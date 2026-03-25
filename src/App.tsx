@@ -152,10 +152,10 @@ const plCreate = async (name, isPublic = false) => {
 const plDelete = async (id) => { await sbFetch(`/user_playlists?id=eq.${id}`, { method: "DELETE" }); await sbFetch(`/playlist_tracks?playlist_id=eq.${id}`, { method: "DELETE" }); };
 const plAddTrack = async (playlistId, track) => {
   await sbFetch("/playlist_tracks", { method: "POST", body: JSON.stringify({ playlist_id: playlistId, track_id: track.id, track_data: track }) });
-  // Set cover from first track if not already set
   const cover = track.album?.cover_medium || track.album?.cover_small || null;
   if (cover) await sbFetch(`/user_playlists?id=eq.${playlistId}`, { method: "PATCH", body: JSON.stringify({ cover_url: cover }) });
 };
+const plUpdate = async (id, patch) => sbFetch(`/user_playlists?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(patch) });
 const plRemoveTrack = async (playlistId, trackId) => sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&track_id=eq.${trackId}`, { method: "DELETE" });
 const plGetTracks = async (playlistId) => { const d = await sbFetch(`/playlist_tracks?playlist_id=eq.${playlistId}&select=track_data&order=created_at.asc`); return (d || []).map(r => r.track_data); };
 
@@ -746,7 +746,7 @@ button, input, select { transition: var(--trans); }
 .pl-modal-input { width: 100%; padding: 7px 10px; background: var(--bg3); border: var(--line); border-radius: var(--r2); font-size: 13px; font-family: 'Geist', sans-serif; color: var(--tx); outline: none; margin-bottom: 12px; }
 .pl-modal-input:focus { border-color: var(--border2); }
 .pl-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
-.pl-modal-btn { padding: 6px 14px; border-radius: var(--r2); font-size: 12px; font-family: 'Geist', sans-serif; cursor: pointer; border: var(--line); background: none; color: var(--tx2); }
+.pl-modal-btn { padding: 6px 14px; border-radius: var(--r2); font-size: 12px; font-family: 'Geist', sans-serif; cursor: pointer; border: var(--line); background: none; color: var(--tx2); display: inline-flex; align-items: center; gap: 5px; }
 .pl-modal-btn.primary { background: var(--tx); color: var(--bg); border-color: var(--tx); }
 .pl-modal-btn:hover { background: var(--bg3); }
 .pl-modal-btn.primary:hover { opacity: .85; }
@@ -762,7 +762,29 @@ button, input, select { transition: var(--trans); }
 .add-to-pl-item { padding: 8px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
 .add-to-pl-item:hover { background: var(--bg3); }
 
-/* ── SIMILAR TRACKS ── */
+/* ── PLAYLIST EDIT ── */
+.pl-edit-bar { display: flex; align-items: center; gap: 8px; padding: 8px 18px; border-bottom: var(--line); background: var(--bg2); flex-wrap: wrap; }
+.pl-edit-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; background: none; border: var(--line); border-radius: var(--r2); padding: 4px 10px; cursor: pointer; color: var(--tx2); font-family: 'Geist Mono', monospace; transition: all .1s; }
+.pl-edit-btn:hover { background: var(--bg3); color: var(--tx); border-color: var(--border2); }
+.pl-edit-btn.active { background: var(--tx); color: var(--bg); border-color: var(--tx); }
+.pl-edit-btn.danger { color: var(--red); border-color: var(--red); }
+.pl-edit-btn.danger:hover { background: rgba(229,72,77,.06); }
+.pl-cover-upload { display: none; }
+.pl-cover-label { cursor: pointer; position: relative; display: block; }
+.pl-cover-label:hover .ehero-img-cell { opacity: .75; }
+.pl-cover-label:hover::after { content: '↑ upload'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: 'Geist Mono', monospace; color: var(--tx); font-weight: 600; pointer-events: none; }
+.pl-track-search { flex: 1; min-width: 140px; max-width: 240px; height: 26px; background: var(--bg3); border: var(--line); border-radius: var(--r2); padding: 0 8px 0 26px; font-size: 12px; font-family: 'Geist', sans-serif; color: var(--tx); outline: none; }
+.pl-track-search:focus { border-color: var(--border2); }
+.pl-search-wrap { position: relative; display: flex; align-items: center; }
+.pl-search-wrap svg { position: absolute; left: 8px; pointer-events: none; color: var(--tx3); }
+.pl-multiselect-row { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-bottom: var(--line); font-size: 11px; font-family: 'Geist Mono', monospace; color: var(--tx3); background: var(--bg2); }
+.pl-multiselect-row button { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-family: 'Geist Mono', monospace; background: none; border: var(--line); border-radius: var(--r2); padding: 2px 8px; cursor: pointer; color: var(--tx2); }
+.pl-multiselect-row button:hover { background: var(--bg3); color: var(--tx); }
+.pl-multiselect-row button.danger { color: var(--red); border-color: var(--red); }
+.pl-multiselect-row button.danger:hover { background: rgba(229,72,77,.06); }
+.tr-selected { background: rgba(0,112,243,.06) !important; }
+.tr-selected td { border-bottom-color: rgba(0,112,243,.15); }
+.td-check { width: 28px; text-align: center; }
 .similar-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--tx3); cursor: pointer; background: none; border: var(--line); padding: 4px 10px; border-radius: var(--r2); font-family: 'Geist Mono', monospace; transition: all .1s; }
 .similar-btn:hover { color: var(--tx); background: var(--bg3); border-color: var(--border2); }
 
@@ -1792,6 +1814,9 @@ export default function App() {
   const [publicPlaylists, setPublicPlaylists] = useState([]);
   const [selCustomPl, setSelCustomPl] = useState(null);
   const [customPlTracks, setCustomPlTracks] = useState([]);
+  const [plEditMode, setPlEditMode] = useState(false);
+  const [plTrackSearch, setPlTrackSearch] = useState("");
+  const [selectedTracks, setSelectedTracks] = useState(new Set());
   const [showCreatePl, setShowCreatePl] = useState(false);
   const [newPlName, setNewPlName] = useState("");
   const [newPlPublic, setNewPlPublic] = useState(false);
@@ -2191,6 +2216,39 @@ export default function App() {
   const removeFromPlaylist = async (track) => {
     await plRemoveTrack(selCustomPl.id, track.id); openCustomPlaylist(selCustomPl); toast("Removed from playlist");
   };
+  const togglePlaylistPublic = async () => {
+    const newVal = !selCustomPl.is_public;
+    await plUpdate(selCustomPl.id, { is_public: newVal });
+    setSelCustomPl(p => ({ ...p, is_public: newVal }));
+    loadPlaylists();
+    toast(newVal ? "Playlist is now public" : "Playlist is now private");
+  };
+  const uploadPlaylistCover = async (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      await plUpdate(selCustomPl.id, { cover_url: dataUrl });
+      setSelCustomPl(p => ({ ...p, cover_url: dataUrl }));
+      loadPlaylists();
+      toast("✓ Cover updated");
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeSelectedTracks = async () => {
+    if (!selectedTracks.size) return;
+    await Promise.all([...selectedTracks].map(id => plRemoveTrack(selCustomPl.id, id)));
+    setSelectedTracks(new Set());
+    openCustomPlaylist(selCustomPl);
+    toast(`Removed ${selectedTracks.size} track${selectedTracks.size > 1 ? "s" : ""}`);
+  };
+  const addSelectedToPlaylist = async (playlistId) => {
+    const tracks = customPlTracks.filter(t => selectedTracks.has(t.id));
+    await Promise.all(tracks.map(t => plAddTrack(playlistId, t)));
+    setSelectedTracks(new Set());
+    setAddToPlMenu(null);
+    toast(`✓ Added ${tracks.length} track${tracks.length > 1 ? "s" : ""} to playlist`);
+  };
   const openCustomPlaylist = async (pl) => {
     setSelCustomPl(pl); setView("custom_playlist"); setLoading(true);
     const tracks = await plGetTracks(pl.id);
@@ -2284,8 +2342,12 @@ export default function App() {
               <Toggle checked={newPlPublic} onChange={setNewPlPublic} />
             </div>
             <div className="pl-modal-btns">
-              <button className="pl-modal-btn" onClick={() => { setShowCreatePl(false); setNewPlName(""); setNewPlPublic(false); }}>Cancel</button>
-              <button className="pl-modal-btn primary" onClick={createPlaylist}>Create</button>
+              <button className="pl-modal-btn" onClick={() => { setShowCreatePl(false); setNewPlName(""); setNewPlPublic(false); }}>
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg> Cancel
+              </button>
+              <button className="pl-modal-btn primary" onClick={createPlaylist}>
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Create
+              </button>
             </div>
           </div>
         </div>
@@ -2295,13 +2357,26 @@ export default function App() {
       {addToPlMenu && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setAddToPlMenu(null)} />
-          <div className="add-to-pl-menu" style={{ top: addToPlMenu.y, left: addToPlMenu.x, zIndex: 200 }}>
-            {playlists.length === 0
+          <div className="add-to-pl-menu" style={{ top: addToPlMenu.y, left: Math.min(addToPlMenu.x, window.innerWidth - 200), zIndex: 200 }}>
+            <div style={{ padding: "6px 14px 4px", fontSize: 10, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)", letterSpacing: ".06em", textTransform: "uppercase" }}>
+              {addToPlMenu.tracks ? `Add ${addToPlMenu.tracks.length} tracks to…` : "Add to playlist"}
+            </div>
+            {playlists.filter(pl => user && pl.user_id === user.id).length === 0
               ? <div className="add-to-pl-item" style={{ color: "var(--tx3)", cursor: "default" }}>No playlists — create one first</div>
-              : playlists.map(pl => (
-                <div key={pl.id} className="add-to-pl-item" onClick={() => { addToPlaylist(pl.id, addToPlMenu.track); setAddToPlMenu(null); }}>
+              : playlists.filter(pl => user && pl.user_id === user.id).map(pl => (
+                <div key={pl.id} className="add-to-pl-item" onClick={async () => {
+                  if (addToPlMenu.tracks) {
+                    await Promise.all(addToPlMenu.tracks.map(t => plAddTrack(pl.id, t)));
+                    toast(`✓ Added ${addToPlMenu.tracks.length} tracks to ${pl.name}`);
+                    setSelectedTracks(new Set());
+                  } else {
+                    await addToPlaylist(pl.id, addToPlMenu.track);
+                  }
+                  setAddToPlMenu(null);
+                }}>
                   <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
                   {pl.name}
+                  {pl.is_public && <span style={{ marginLeft: "auto", fontSize: 9, fontFamily: "'Geist Mono',monospace", color: "var(--green)" }}>PUB</span>}
                 </div>
               ))}
           </div>
@@ -2594,7 +2669,9 @@ export default function App() {
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
                     New
                   </button>}
-                  {!user && <button className="pl-create-btn" onClick={() => setAuthOpen(true)}>Sign in</button>}
+                  {!user && <button className="pl-create-btn" onClick={() => setAuthOpen(true)}>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Sign in
+                  </button>}
                 </div>
               </div>
               {/* Tabs */}
@@ -2638,27 +2715,173 @@ export default function App() {
           )}
 
           {/* CUSTOM PLAYLIST detail */}
-          {!loading && view === "custom_playlist" && selCustomPl && (
-            <div>
-              <div className="ehero">
-                <div className="ehero-img-cell" style={{ background: "var(--bg3)" }}>
-                  {selCustomPl.cover_url
-                    ? <img className="ehero-img" src={selCustomPl.cover_url} alt="" />
-                    : <svg width="48" height="48" fill="none" stroke="var(--tx3)" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>}
+          {!loading && view === "custom_playlist" && selCustomPl && (() => {
+            const isOwner = user && selCustomPl.user_id === user.id;
+            const filteredTracks = plTrackSearch
+              ? customPlTracks.filter(t =>
+                  t.title?.toLowerCase().includes(plTrackSearch.toLowerCase()) ||
+                  t.artist?.name?.toLowerCase().includes(plTrackSearch.toLowerCase())
+                )
+              : customPlTracks;
+            const allSelected = filteredTracks.length > 0 && filteredTracks.every(t => selectedTracks.has(t.id));
+            return (
+              <div>
+                <div className="ehero">
+                  {/* Cover — clickable to upload if owner */}
+                  <div className="ehero-img-cell" style={{ background: "var(--bg3)", padding: 0, overflow: "hidden" }}>
+                    {isOwner ? (
+                      <label className="pl-cover-label" title="Upload cover image" style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
+                        <input className="pl-cover-upload" type="file" accept="image/*" onChange={e => uploadPlaylistCover(e.target.files[0])} />
+                        {selCustomPl.cover_url
+                          ? <img className="ehero-img" src={selCustomPl.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "var(--tx3)", padding: 20 }}>
+                              <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                              <span style={{ fontSize: 10, fontFamily: "'Geist Mono',monospace" }}>upload cover</span>
+                            </div>}
+                      </label>
+                    ) : (
+                      selCustomPl.cover_url
+                        ? <img className="ehero-img" src={selCustomPl.cover_url} alt="" />
+                        : <svg width="48" height="48" fill="none" stroke="var(--tx3)" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                    )}
+                  </div>
+                  <div className="ehero-info">
+                    <div className="entity-type">Playlist</div>
+                    <div className="entity-name">{selCustomPl.name}</div>
+                    <div className="entity-meta">
+                      <span className="emeta-item"><span className="lbl">tracks</span>{customPlTracks.length}</span>
+                      <span className="emeta-item">
+                        <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 9, fontWeight: 600, letterSpacing: ".06em", color: selCustomPl.is_public ? "var(--green)" : "var(--tx3)", border: `1px solid ${selCustomPl.is_public ? "var(--green)" : "var(--border)"}`, borderRadius: 3, padding: "2px 5px" }}>
+                          {selCustomPl.is_public ? "PUBLIC" : "PRIVATE"}
+                        </span>
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                      <button className="play-hero-btn" onClick={() => filteredTracks.length && doPlay(filteredTracks[0], filteredTracks, 0)}>
+                        <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Play All
+                      </button>
+                      {isOwner && (
+                        <button className="pl-edit-btn" onClick={togglePlaylistPublic}>
+                          {selCustomPl.is_public
+                            ? <><svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Make Private</>
+                            : <><svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Make Public</>}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="ehero-info">
-                  <div className="entity-type">Playlist</div>
-                  <div className="entity-name">{selCustomPl.name}</div>
-                  <div className="entity-meta"><span className="emeta-item"><span className="lbl">tracks</span>{customPlTracks.length}</span></div>
-                  <button className="play-hero-btn" onClick={() => customPlTracks.length && doPlay(customPlTracks[0], customPlTracks, 0)}>
-                    <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Play All
+
+                {/* Toolbar */}
+                <div className="pl-edit-bar">
+                  <button className="back-btn" onClick={() => { setView("library"); setSelectedTracks(new Set()); setPlTrackSearch(""); }}>
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> library
                   </button>
+                  <div className="pl-search-wrap">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input className="pl-track-search" placeholder="Search tracks…" value={plTrackSearch} onChange={e => setPlTrackSearch(e.target.value)} />
+                  </div>
+                  {isOwner && (
+                    <button className={`pl-edit-btn${plEditMode ? " active" : ""}`} onClick={() => { setPlEditMode(m => !m); setSelectedTracks(new Set()); }}>
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      {plEditMode ? "Done" : "Edit"}
+                    </button>
+                  )}
+                  <span style={{ marginLeft: "auto", fontSize: 10, fontFamily: "'Geist Mono',monospace", color: "var(--tx3)" }}>{filteredTracks.length} track{filteredTracks.length !== 1 ? "s" : ""}</span>
                 </div>
+
+                {/* Multiselect action bar */}
+                {plEditMode && selectedTracks.size > 0 && (
+                  <div className="pl-multiselect-row">
+                    <span>{selectedTracks.size} selected</span>
+                    <button onClick={removeSelectedTracks} className="danger">
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                      Remove from playlist
+                    </button>
+                    <button onClick={() => { const rect = document.getElementById("pl-multiselect-add-btn")?.getBoundingClientRect(); setAddToPlMenu({ tracks: [...selectedTracks].map(id => customPlTracks.find(t => t.id === id)).filter(Boolean), x: rect?.left || 100, y: (rect?.bottom || 100) + 4 }); }} id="pl-multiselect-add-btn">
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                      Add to playlist
+                    </button>
+                    <button onClick={() => setSelectedTracks(new Set())}>
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Track list with optional checkboxes */}
+                {filteredTracks.length === 0
+                  ? <div className="empty"><div className="empty-title">{plTrackSearch ? `No tracks matching "${plTrackSearch}"` : "No tracks yet"}</div><div className="empty-sub">Add tracks using the + button on any song</div></div>
+                  : <table className="ttbl">
+                      <thead>
+                        <tr>
+                          {plEditMode && <th className="td-check">
+                            <input type="checkbox" checked={allSelected} onChange={() => {
+                              if (allSelected) setSelectedTracks(new Set());
+                              else setSelectedTracks(new Set(filteredTracks.map(t => t.id)));
+                            }} style={{ cursor: "pointer" }} />
+                          </th>}
+                          <th style={{ width: 36 }}>#</th>
+                          <th>TITLE</th>
+                          <th>ALBUM</th>
+                          <th className="r">TIME</th>
+                          <th style={{ width: 36 }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredTracks.map((t, i) => {
+                          const active = current?.id === t.id;
+                          const isSel = selectedTracks.has(t.id);
+                          return (
+                            <tr key={t.id} className={`${active ? "tr-active" : ""}${isSel ? " tr-selected" : ""}`}
+                              onClick={() => {
+                                if (plEditMode) {
+                                  setSelectedTracks(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; });
+                                } else {
+                                  doPlay(t, filteredTracks, i);
+                                }
+                              }}>
+                              {plEditMode && <td className="td-check" onClick={e => e.stopPropagation()}>
+                                <input type="checkbox" checked={isSel} onChange={() => setSelectedTracks(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })} style={{ cursor: "pointer" }} />
+                              </td>}
+                              <td className="td-n">
+                                {active && playing
+                                  ? <div className="eq" style={{ margin: "0 auto" }}><div className="eq-b" /><div className="eq-b" /><div className="eq-b" /></div>
+                                  : <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>{i + 1}</span>}
+                              </td>
+                              <td>
+                                <div className="td-info">
+                                  {t.album?.cover_small && <img className="td-art" src={t.album.cover_small} alt="" />}
+                                  <div style={{ overflow: "hidden" }}>
+                                    <div className="td-name"><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</span></div>
+                                    <div className="td-sub">{t.artist?.name}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="td-album">{t.album?.title}</td>
+                              <td className="td-dur">{fmt(t.duration)}</td>
+                              <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
+                                  {isOwner && !plEditMode && (
+                                    <button className="like-btn" title="Remove from playlist" onClick={e => { e.stopPropagation(); removeFromPlaylist(t); }} style={{ color: "var(--tx3)" }}>
+                                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                    </button>
+                                  )}
+                                  <button className="like-btn" title="Similar" onClick={e => { e.stopPropagation(); getSimilar(t); }}>
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9"/></svg>
+                                  </button>
+                                  <button className={`like-btn${liked.some(x => x.id === t.id) ? " liked" : ""}`} onClick={e => { e.stopPropagation(); toggleLike(t); }}>
+                                    <svg width="13" height="13" fill={liked.some(x => x.id === t.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>}
               </div>
-              <div style={{ padding: "8px 18px" }}><button className="back-btn" onClick={() => setView("library")}>← library</button></div>
-              <TTable tracks={customPlTracks} showAlbum {...tp} />
-            </div>
-          )}
+            );
+          })()}
 
           {/* SIMILAR TRACKS */}
           {view === "similar" && (
