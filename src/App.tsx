@@ -1051,7 +1051,7 @@ const CommandPalette = memo(({ onClose, recent, liked, charts, queue, current, o
 });
 
 /* ─── LYRICS PAGE ───────────────────────────────────────────────── */
-const LyricsPage = memo(({ current, ytRef }) => {
+const LyricsPage = memo(({ current, getTime }) => {
   const [synced, setSynced] = useState(null);
   const [plain, setPlain] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1087,7 +1087,7 @@ const LyricsPage = memo(({ current, ytRef }) => {
     cancelAnimationFrame(rafRef.current);
     if (!synced) return;
     const tick = () => {
-      const t = ytRef.current?.getCurrentTime?.() || 0;
+      const t = getTime();
       let idx = 0;
       for (let i = 0; i < synced.length; i++) {
         if (synced[i].time <= t) idx = i; else break;
@@ -1350,40 +1350,22 @@ const WaveBars = memo(({ playing }) => (
 ));
 
 /* ─── FS PROGRESS BAR (isolated to prevent re-renders hitting wave RAF) ── */
-const FsProgressBar = memo(({ playing, currentId, currentDuration, ytRef, onSeek }) => {
+const FsProgressBar = memo(({ playing, currentId, currentDuration, getTime, getDur, onSeek }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(currentDuration || 0);
   const timerRef = useRef(null);
   const fmt = (s) => { if (!s && s !== 0) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
 
   useEffect(() => {
-  clearInterval(timerRef.current);
-
-  const waitForYT = () => {
-    const yt = ytRef.current;
-
-    // 🔥 wait until YouTube is ACTUALLY ready
-    if (!yt || typeof yt.getDuration !== "function") {
-      requestAnimationFrame(waitForYT);
-      return;
+    clearInterval(timerRef.current);
+    if (playing) {
+      timerRef.current = setInterval(() => {
+        const t = getTime();
+        const d = getDur();
+        if (t != null && isFinite(t)) setProgress(t);
+        if (d != null && isFinite(d) && d > 0) setDuration(d);
+      }, 400);
     }
-
-    timerRef.current = setInterval(() => {
-      const t = yt.getCurrentTime();
-      const d = yt.getDuration();
-
-      // ✅ ONLY update if valid
-      if (!isNaN(t)) setProgress(t);
-      if (!isNaN(d) && d > 0) setDuration(d);
-    }, 400);
-  };
-
-  if (playing) {
-    waitForYT();
-  }
-
-  return () => clearInterval(timerRef.current);
-}, [playing, current?.id]);
     return () => clearInterval(timerRef.current);
   }, [playing]);
 
@@ -1421,7 +1403,7 @@ const FsSidebarToggle = memo(({ open, onClick }) => (
 /* ─── FULLSCREEN VIEW ───────────────────────────────────────────── */
 const FullscreenView = memo(({
   current, queue, qIdx, playing, buffering, shuffle, repeat,
-  liked, volume, ytRef,
+  liked, volume, getTime, getDur,
   onClose, onTogglePlay, onAdvance, onSeek, onVolume, onLike,
   onShuffle, onRepeat, onPlayFromQueue,
   relatedTracks = [],
@@ -1603,7 +1585,7 @@ const FullscreenView = memo(({
 
       {/* BOTTOM CONTROLS */}
       <div className="fs-controls">
-        <FsProgressBar playing={playing} currentId={current?.id} currentDuration={current?.duration} ytRef={ytRef} onSeek={onSeek} />
+        <FsProgressBar playing={playing} currentId={current?.id} currentDuration={current?.duration} getTime={getTime} getDur={getDur} onSeek={onSeek} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div className="fs-side-controls">
             <div className="fs-vol-wrap">
@@ -1656,7 +1638,7 @@ const FullscreenView = memo(({
 
 /* ─── PLAYER BAR ────────────────────────────────────────────────── */
 const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, volume,
-  onTogglePlay, onAdvance, onSeek, onVolume, onLike, onShuffle, onRepeat, onFullscreen, ytRef }) => {
+  onTogglePlay, onAdvance, onSeek, onVolume, onLike, onShuffle, onRepeat, onFullscreen, getTime, getDur }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const timerRef = useRef(null);
@@ -1665,10 +1647,10 @@ const PlayerBar = memo(({ current, playing, buffering, shuffle, repeat, liked, v
     clearInterval(timerRef.current);
     if (playing) {
       timerRef.current = setInterval(() => {
-        const t = ytRef.current?.getCurrentTime?.();
-        const d = ytRef.current?.getDuration?.();
-        if (t != null) setProgress(t);
-        if (d != null && d !== duration) setDuration(d);
+        const t = getTime();
+        const d = getDur();
+        if (t != null && isFinite(t)) setProgress(t);
+        if (d != null && isFinite(d) && d > 0) setDuration(d);
         if ("mediaSession" in navigator && t != null && d > 0) {
           try { navigator.mediaSession.setPositionState({ duration: d, playbackRate: 1, position: Math.min(t, d) }); } catch {}
         }
@@ -1825,6 +1807,20 @@ export default function App() {
   const userChipRef = useRef(null);
 
   const ytRef = useRef(null);
+  const wolfActiveRef = useRef(false); // true when wolf audio is the active source
+  // Unified time accessors — works for both YouTube and wolf audio
+  const getCurrentTime = () => {
+    if (wolfActiveRef.current) return document.getElementById("wolf-audio")?.currentTime || 0;
+    return ytRef.current?.getCurrentTime?.() || 0;
+  };
+  const getDuration = () => {
+    if (wolfActiveRef.current) { const d = document.getElementById("wolf-audio")?.duration; return (d && isFinite(d)) ? d : 0; }
+    return ytRef.current?.getDuration?.() || 0;
+  };
+  const seekTo = (t) => {
+    if (wolfActiveRef.current) { const a = document.getElementById("wolf-audio"); if (a) a.currentTime = t; return; }
+    ytRef.current?.seekTo?.(t, true);
+  };
   const qRef = useRef([]), qIdxRef = useRef(0);
   const shuffleRef = useRef(shuffle), repeatRef = useRef(repeat), volRef = useRef(volume);
 
@@ -2021,6 +2017,7 @@ export default function App() {
         wolfAudio.volume = volRef.current / 100;
         const ok = await wolfPlay(wolfAudio, track.title, track.artist?.name || "");
         if (ok) {
+          wolfActiveRef.current = true;
           ytRef.current?.pauseVideo?.();
           setPlaying(true); setBuffering(false);
           return;
@@ -2029,6 +2026,7 @@ export default function App() {
     } catch {}
 
     // 2. YouTube cache
+    wolfActiveRef.current = false;
     let vid = await ytCacheGet(track.id);
     if (!vid) {
       const searchQ = audioQuality === "high" ? `${track.title} ${track.artist?.name} official audio` : `${track.title} ${track.artist?.name} audio`;
@@ -2057,12 +2055,14 @@ export default function App() {
 
   const togglePlay = useCallback(() => {
     const wolfAudio = document.getElementById("wolf-audio");
-    if (wolfAudio && wolfAudio.src && !wolfAudio.paused) { wolfAudio.pause(); return; }
-    if (wolfAudio && wolfAudio.src && wolfAudio.paused) { wolfAudio.play(); return; }
+    if (wolfActiveRef.current && wolfAudio) {
+      wolfAudio.paused ? wolfAudio.play() : wolfAudio.pause();
+      return;
+    }
     if (!ytRef.current) return;
     playing ? ytRef.current.pauseVideo() : ytRef.current.playVideo();
   }, [playing]);
-  const handleSeek = useCallback((t) => { ytRef.current?.seekTo?.(t, true); }, []);
+  const handleSeek = useCallback((t) => { seekTo(t); }, []);
   const changeVol = useCallback(v => {
     setVolume(v); volRef.current = v;
     ytRef.current?.setVolume?.(v);
@@ -2320,7 +2320,8 @@ export default function App() {
           repeat={repeat}
           liked={liked}
           volume={volume}
-          ytRef={ytRef}
+          getTime={getCurrentTime}
+          getDur={getDuration}
           relatedTracks={relatedTracks}
           onClose={() => setFullscreenOpen(false)}
           onTogglePlay={togglePlay}
@@ -2574,7 +2575,7 @@ export default function App() {
 
           {!loading && view === "stats" && <StatsPage recent={recent} liked={liked} />}
 
-          {view === "lyrics" && <LyricsPage current={current} ytRef={ytRef} />}
+          {view === "lyrics" && <LyricsPage current={current} getTime={getCurrentTime} />}
 
           {/* LIBRARY — custom playlists */}
           {view === "library" && (
@@ -2879,7 +2880,8 @@ export default function App() {
           repeat={repeat}
           liked={liked}
           volume={volume}
-          ytRef={ytRef}
+          getTime={getCurrentTime}
+          getDur={getDuration}
           onTogglePlay={togglePlay}
           onAdvance={advance}
           onSeek={handleSeek}
